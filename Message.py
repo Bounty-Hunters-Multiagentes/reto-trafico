@@ -40,3 +40,18 @@ class Message():
         The send function is used to send a message to the environment buffer.
         """
         Message.environment_buffer.append(self)
+        
+    @staticmethod
+    def receive(receiver_id):
+        """
+        The receive function is used to receive a message from the environment buffer.
+        """
+        received_messages = []
+        for message in Message.environment_buffer:
+            if message.receiver == receiver_id:
+                received_messages.append(message)
+            
+        for message in received_messages:
+            Message.environment_buffer.remove(message)
+        
+        return received_messages
