@@ -87,7 +87,7 @@ class CuboAgentVelocity(ap.Agent):
         self.collision = False
 
         if self.id == 1:
-            self.g_cubo = Car.Car(self.Position,scale=5)
+            self.g_cubo = Car.Car(self.Position,scale=5, id=self.id)
         else:
             self.g_cubo = Cubo.Cubo(self.Position, scale=5)
             

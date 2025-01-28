@@ -33,6 +33,7 @@ class Car:
         self.rotation = 0
     
     def draw(self, Position):
+        self.Position = Position
         glPushMatrix()
         glTranslatef(Position[0], Position[1], Position[2])
         glColor3f(1.0, 1.0, 1.0)
@@ -140,9 +141,9 @@ class Frustum:
         sin_theta = math.sin(rotation_rad)
 
         # trasnformar considerando la posicion del carro
-        px -= car_position[0] - self.car_offset[0]
-        py -= car_position[1] - self.car_offset[1]
-        pz -= car_position[2] - self.car_offset[2]
+        px -= car_position[0] + self.car_offset[0]
+        py -= car_position[1] + self.car_offset[1]
+        pz -= car_position[2] + self.car_offset[2]
 
         # Rotar Y-axis
         px_rot = px * cos_theta - pz * sin_theta
