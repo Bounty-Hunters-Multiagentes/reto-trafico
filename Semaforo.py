@@ -102,7 +102,7 @@ class Semaforo:
             return (0.0, 1.0, 0.0) 
     
     def draw(self, Position, scale=1.0):
-        self.update_color()
+        # self.update_color()
         
         glPushMatrix()
         glTranslatef(Position[0], Position[1], Position[2])

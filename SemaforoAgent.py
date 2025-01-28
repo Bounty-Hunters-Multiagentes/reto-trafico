@@ -1,6 +1,7 @@
 from Message import Message
 import agentpy as ap
 import math
+from Semaforo import Semaforo
 
 class SemaforoAgent(ap.Agent):
 
@@ -10,17 +11,25 @@ class SemaforoAgent(ap.Agent):
         """
         self.direction = ""  # up, down, left, right
         self.first_car_arrival = 99999999  # Initially very large number
-        self.green_time = 30  # Time for green light
-        self.yellow_time = 10  # Time for yellow light
+        self.green_time = None  # Time for green light
+        self.yellow_time = None  # Time for yellow light
         self.red_time = 0  # Red time is infinite until another light decides
         self.state = "Red"  # Initial state
         self.intention = None  # Intended next state
         self.time_counter = 0  # Counter for state transitions
         self.first_car_arrivals = { "up": 99999999, "down": 99999999, "left": 99999999, "right": 99999999 }  # Initialize dictionary for all directions
         self.reported = False  # To track if the agent has already reported its first car arrival
-
+        self.semaforo = None
+        
     def setup_direction(self, direction):
         self.direction = direction
+        
+    def setup_semaforo(self, semaforoInfo):
+        self.semaforo = Semaforo(semaforoInfo['init_pos'], semaforoInfo['rotation'])
+    
+    def setup_color_time(self, green, yellow):
+        self.green_time = green
+        self.yellow_time = yellow
         
     def take_msg(self):
         """
@@ -33,7 +42,10 @@ class SemaforoAgent(ap.Agent):
                 arrival_times = [(time, dir) for dir, time in self.first_car_arrivals.items()]
                 # Sort the array first by arrival_time, then by direction
                 arrival_times.sort()
-
+                
+                # print("these were the arrival times: ")
+                # print(arrival_times)
+                
                 # Check if the current direction has the earliest arrival time
                 if (self.first_car_arrival, self.direction) == arrival_times[0]:
                     self.intention = "Green"  # Set intention to Green
@@ -87,9 +99,12 @@ class SemaforoAgent(ap.Agent):
         """
         if self.intention:
             if self.state == "Yellow" and self.intention == "Red":
+                
+                # print("Became Red")
+                
                 # Notify other traffic lights when switching to Red
-                for other_light in self.model.traffic_lights:
-                    if other_light.direction != self.direction:
+                for other_light in self.model.semaforos:
+                    if other_light.direction != self.direction or True: # lo vamos a dejar asi por ahora (deberia funcionar igual)
                         Message(
                             sender=self.direction,
                             receiver=other_light.direction,
@@ -129,3 +144,7 @@ class SemaforoAgent(ap.Agent):
         self.see()
         self.next()
         self.action()
+        
+    def update(self):
+        self.semaforo.current_color = self.state
+        self.semaforo.draw(self.semaforo.Position, scale=10.5)

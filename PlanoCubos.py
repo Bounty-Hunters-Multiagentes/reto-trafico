@@ -99,13 +99,14 @@ def Init():
     pygame.display.set_caption("OpenGL: cubos")
 
     # Se carga
-    
+    """
     semaforos = [
     Semaforo(init_pos=(-45, 10, -60), rotation=0),    # bottom left
     Semaforo(init_pos=(60, 10, -45), rotation=270),    # bottom right
     Semaforo(init_pos=(-60, 10, 45), rotation=90),   # top left
     Semaforo(init_pos=(45, 10, 60), rotation=180)     # top right
 ]
+"""
     
     floor_texture = load_texture('Assets/4wayStreet.png')
 
@@ -123,10 +124,10 @@ def Init():
 def display(DimBoard):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     Axis()
-    
+    """
     for semaforo in semaforos:
         semaforo.draw(semaforo.Position, scale=10.5)
-    
+    """
     # Dibujamos el piso
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, floor_texture)

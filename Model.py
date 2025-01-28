@@ -82,17 +82,29 @@ class CuboModel(ap.Model):
         self.collisions = 0
         
         self.semaforos = ap.AgentList(self, 4, SemaforoAgent)  # 4 traffic lights
-        directions = ['up', 'right', 'down', 'left']
+        directions = ['up', 'down', 'left', 'rigth']
+        
+        semaforo_info = [
+            {'init_pos': (45, 10, 60), 'rotation': 180},  # For 'up'
+            {'init_pos': (-45, 10, -60), 'rotation': 0},  # For 'down'
+            {'init_pos': (60, 10, -45), 'rotation': 270}, # For 'right'
+            {'init_pos': (-60, 10, 45), 'rotation': 90},  # For 'left'
+        ]
+        
         for i, semaforo in enumerate(self.semaforos):
             semaforo.setup_direction(directions[i])
+            semaforo.setup_semaforo(semaforo_info[i])
+            semaforo.setup_color_time(300, 100) # la cantidad de pasos que va a estar prendida la luz verde y la amarilla antes de cambiar de semaforo
         pass
 
     def step(self):
         self.semaforos.step()
         self.cubos.step()
+        # print(self.t)
         pass
 
     def update(self):
+        self.semaforos.update()
         self.cubos.update()
         self.record('Cantidad de colisiones', self.collisions)
         self.collisions = 0
