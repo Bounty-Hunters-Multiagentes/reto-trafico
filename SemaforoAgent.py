@@ -20,13 +20,15 @@ class SemaforoAgent(ap.Agent):
         self.first_car_arrivals = { "up": 99999999, "down": 99999999, "left": 99999999, "right": 99999999 }  # Initialize dictionary for all directions
         self.reported = False  # To track if the agent has already reported its first car arrival
         self.semaforo = None
+        self.Position = [0, 0, 0]
         
     def setup_direction(self, direction):
         self.direction = direction
         
     def setup_semaforo(self, semaforoInfo):
         self.semaforo = Semaforo(semaforoInfo['init_pos'], semaforoInfo['rotation'])
-    
+        self.Position = semaforoInfo['init_pos']
+        
     def setup_color_time(self, green, yellow):
         self.green_time = green
         self.yellow_time = yellow

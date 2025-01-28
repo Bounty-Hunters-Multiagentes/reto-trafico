@@ -6,6 +6,7 @@ import math
 import random
 import pygame
 import matplotlib.pyplot as plt
+from SemaforoAgent import SemaforoAgent
 
 from enum import Enum
 from Message import Message
@@ -93,14 +94,12 @@ class CuboAgentVelocity(ap.Agent):
         self.collision = False
 
         if self.id == 1:
-            self.g_cubo = Car.Car(self.Position,scale=5, id=self.id)
-        else:
+            global tar_ref
             self.g_cubo = Cubo.Cubo(self.Position, scale=5)
+            tar_ref = self
+        else:
+            self.g_cubo = Car.Car(self.Position,scale=5, id=self.id)
             
-            if self.id == 2:
-                global tar_ref
-                tar_ref = self
-
         self.g_cubo.draw(self.Position)
 
     def step(self):
@@ -124,9 +123,6 @@ class CuboAgentVelocity(ap.Agent):
             self.control_jerk(-self.jerk_delta)
         
         self.update_velocity()
-        
-        if self.id == 1:
-            self.objects_perceived()
 
         # No colisión por ahora, solo limites del mapa
         new_pos = np.array(self.Position) + self.delta_pos 
@@ -150,17 +146,17 @@ class CuboAgentVelocity(ap.Agent):
                 d_c = math.sqrt(d_x * d_x + d_z * d_z)
                 if d_c - (self.radio + ag.radio) < 0.0:
                     self.collision = True
-                    self.model.collisions += 1
-                    
-    def objects_perceived(self):
-        perceived = self.g_cubo.perceive_objects(self.model.cubos)
-       
-        print(f"Perceived  {len(perceived)} objects")
+                    self.model.collisions += 1                    
         
     # Posible funcion para reemplazar objects_perceived
     def perceive_environment(self):
-        cars = self.g_cubo.perceive_objects(self.model.cubos),
-        lights = self.g_cubo.perceive_objects(self.model.semaforos)
+        # Handle test object
+        if self.id == 1:
+            cars = []
+            lights = []
+        else:
+            cars = self.g_cubo.perceive_objects(self.model.cubos)
+            lights = self.g_cubo.perceive_objects(self.model.semaforos)
         
         if DEBUG['perception']:
             print(f"\n=== Car {self.id} Perception State ===")
@@ -290,90 +286,103 @@ class CuboAgentVelocity(ap.Agent):
         # self.acc = 0
         # self.vel = 0
 
-# class CuboModel(ap.Model):
+class CuboModel(ap.Model):
 
-#     def setup(self):
-#         self.cubos = ap.AgentList(self, self.p.cubos, CuboAgentVelocity)
-#         self.collisions = 0
-#         pass
+    def setup(self):
+        self.cubos = ap.AgentList(self, self.p.cubos, CuboAgentVelocity)
+        self.semaforos = ap.AgentList(self, 4, SemaforoAgent)
+        directions = ['up', 'down', 'left', 'rigth']
+        semaforo_info = [
+            {'init_pos': (45, 10, 60), 'rotation': 180},  # For 'up'
+            {'init_pos': (-45, 10, -60), 'rotation': 0},  # For 'down'
+            {'init_pos': (60, 10, -45), 'rotation': 270}, # For 'right'
+            {'init_pos': (-60, 10, 45), 'rotation': 90},  # For 'left'
+        ]
+        
+        for i, semaforo in enumerate(self.semaforos):
+            semaforo.setup_direction(directions[i])
+            semaforo.setup_semaforo(semaforo_info[i])
+            semaforo.setup_color_time(300, 100) # la cantidad de pasos que va a estar prendida la luz verde y la amarilla antes de cambiar de semaforo
+        
+        self.collisions = 0
 
-#     def step(self):
-#         self.cubos.step()
-#         pass
+    def step(self):
+        self.semaforos.step()
+        self.cubos.step()
 
-#     def update(self):
-#         self.cubos.update()
-#         self.record('Cantidad de colisiones', self.collisions)
-#         self.collisions = 0
-#         pass
+    def update(self):
+        self.semaforos.update()
+        self.cubos.update()
+        self.record('Cantidad de colisiones', self.collisions)
+        self.collisions = 0
 
-#     def end(self):
-#         pass
+    def end(self):
+        pass
 
 
-# parameters = {
-#    'cubos' : 2,
-#    'dim' : 200,
-#    'vel' : 2.0,
-#    'Scale' : 5.0,
-#    #'steps' : 100
-# }
+parameters = {
+   'cubos' : 2,
+   'dim' : 200,
+   'vel' : 2.0,
+   'Scale' : 5.0,
+   #'steps' : 100
+}
 
-# model = CuboModel(parameters)
+model = CuboModel(parameters)
 
-# STEP = 5
+STEP = 5
 
-# done = False
-# PlanoCubos.Init()
-# model.sim_setup()
-# while not done:
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             done = True
-#             model.stop()
-#             model.create_output()
-#             model.output.info['Mensaje'] = 'Puedes añadir información al registro de esta forma.'
-#         elif event.type == pygame.KEYDOWN:
-#             # Check for a specific key (e.g., SPACE key) to change velocity
-#             if event.key == pygame.K_UP:  # UP key
-#                 for agent in model.cubos:
-#                     agent.start_movement(CarMovement.ACCELERATING)
+done = False
+PlanoCubos.Init()
+model.sim_setup()
+while not done:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            done = True
+            model.stop()
+            model.create_output()
+            model.output.info['Mensaje'] = 'Puedes añadir información al registro de esta forma.'
+        elif event.type == pygame.KEYDOWN:
+            # Check for a specific key (e.g., SPACE key) to change velocity
+            if event.key == pygame.K_UP:  # UP key
+                for agent in model.cubos:
+                    agent.start_movement(CarMovement.ACCELERATING)
                     
-#             if event.key == pygame.K_DOWN:  # DOWN key
-#                 for agent in model.cubos:
-#                     agent.start_movement(CarMovement.STOPPING)
+            if event.key == pygame.K_DOWN:  # DOWN key
+                for agent in model.cubos:
+                    agent.start_movement(CarMovement.STOPPING)
                     
-#             if event.key == pygame.K_SPACE:  # SPACE key
-#                 for agent in model.cubos:
-#                     agent.reset_position()
+            if event.key == pygame.K_SPACE:  # SPACE key
+                for agent in model.cubos:
+                    agent.reset_position()
                     
-#             if event.key == pygame.K_a:
-#                 tar_ref.Position[0] -= STEP
+            if event.key == pygame.K_a:
+                tar_ref.Position[0] -= STEP
                 
-#             elif event.key == pygame.K_d:
-#                 tar_ref.Position[0] += STEP
+            elif event.key == pygame.K_d:
+                tar_ref.Position[0] += STEP
                 
-#             elif event.key == pygame.K_w:
-#                 tar_ref.Position[2] -= STEP
+            elif event.key == pygame.K_w:
+                tar_ref.Position[2] -= STEP
                 
                 
-#             elif event.key == pygame.K_s:
-#                 tar_ref.Position[2] += STEP
+            elif event.key == pygame.K_s:
+                tar_ref.Position[2] += STEP
             
 
-#     PlanoCubos.display(parameters['dim'])
+    PlanoCubos.display(parameters['dim'])
     
-#     if model.running:
-#         model.sim_step()
+    if model.running:
+        model.sim_step()
     
 
-#     pygame.display.flip()
-#     pygame.time.wait(100)
+    pygame.display.flip()
+    pygame.time.wait(100)
 
-# pygame.quit()
+pygame.quit()
 
-# print(model.output.info)
-# model.output.variables.CuboModel.plot()
-# plt.show()
+print(model.output.info)
+model.output.variables.CuboModel.plot()
+plt.show()
 
 
