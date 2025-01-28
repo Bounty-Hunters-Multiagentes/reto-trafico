@@ -52,7 +52,6 @@ class Car:
         glPopMatrix()
     
     def perceive_objects(self, objects):
-        
         objects_perceived = []
         for object in objects:
             if self.id != object.id and self.car_light.is_point_inside_frustum(object.Position):

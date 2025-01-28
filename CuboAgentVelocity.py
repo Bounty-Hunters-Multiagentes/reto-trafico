@@ -8,6 +8,8 @@ import pygame
 import matplotlib.pyplot as plt
 
 from enum import Enum
+from Message import Message
+from constants import DEBUG
 import numpy as np
 
 class Direction(Enum):
@@ -43,7 +45,10 @@ self.jerk_time_acc = 0.5 # How much time to have jerk positive
 self.jerk_time_wait = 0.5 # How much time to have jerk at 0
 """
 class CuboAgentVelocity(ap.Agent):
-
+    
+    '''
+    Required agent functions
+    '''
     def setup(self):
         self.vel = 0
         self.acc = 0
@@ -56,6 +61,7 @@ class CuboAgentVelocity(ap.Agent):
         self.jerk_state = JerkState.NONE # State of accelerating of deaccelerating
         self.state_timer = 0 # Timer to know when to change states
         self.car_movement = CarMovement.NONE # Whether accelerating, stopping, or none
+        self.last_seen_lights = False
         
         
         self.scale = self.model.p.Scale
@@ -98,6 +104,20 @@ class CuboAgentVelocity(ap.Agent):
         self.g_cubo.draw(self.Position)
 
     def step(self):
+        perception = self.perceive_environment()
+        
+        if DEBUG['movement']:
+            print(f"\n=== Car {self.id} Movement State ===")
+            print(f"Movement Type: {self.car_movement}")
+            print(f"Jerk State: {self.jerk_state}")
+            print(f"Current Speed: {round(self.vel, 2)}")
+            print(f"Current Acceleration: {round(self.acc, 2)}")
+        
+        if perception['lights'] and not self.last_seen_lights:
+            self.send_arrival_message()
+            
+        self.last_seen_lights = bool(perception['lights'])
+        
         if self.car_movement == CarMovement.ACCELERATING:
             self.control_jerk(self.jerk_delta)
         elif self.car_movement == CarMovement.STOPPING:
@@ -118,7 +138,10 @@ class CuboAgentVelocity(ap.Agent):
 
     def update(self):
         self.g_cubo.draw(self.Position)
-
+        
+    '''
+    Interaction, communication and perception
+    '''
     def CollitionDetection(self):
         for ag in self.model.cubos:
             if self.id != ag.id:
@@ -133,6 +156,64 @@ class CuboAgentVelocity(ap.Agent):
         perceived = self.g_cubo.perceive_objects(self.model.cubos)
        
         print(f"Perceived  {len(perceived)} objects")
+        
+    # Posible funcion para reemplazar objects_perceived
+    def perceive_environment(self):
+        cars = self.g_cubo.perceive_objects(self.model.cubos),
+        lights = self.g_cubo.perceive_objects(self.model.semaforos)
+        
+        if DEBUG['perception']:
+            print(f"\n=== Car {self.id} Perception State ===")
+            print(f"Position: {[round(p, 2) for p in self.Position]}")
+            print(f"Velocity: {round(self.vel, 2)}")
+            
+            if lights:
+                print("\nDetected Traffic Lights:")
+                for light in lights:
+                    distance = np.linalg.norm(np.array(light.semaforo.Position) - np.array(self.Position))
+                    print(f"  - Direction: {light.direction}")
+                    print(f"  - State: {light.state}")
+                    print(f"  - Distance: {round(distance, 2)}")
+            
+            if cars:
+                print("\nDetected Cars:")
+                for car in cars:
+                    distance = np.linalg.norm(np.array(car.Position) - np.array(self.Position))
+                    print(f"  - Car ID: {car.id}")
+                    print(f"  - Distance: {round(distance, 2)}")
+        
+        light_info = []
+        for light in lights:
+            light_info.append({
+                'light': light,
+                'state': light.state,
+                'position': light.semaforo.Position
+            })
+            
+        return {
+            'cars': cars,
+            'lights': light_info
+        }
+    
+    def send_arrival_message(self):
+        perception = self.perceive_environment()
+        
+        if perception['lights']:
+            nearest_light = min(perception['lights'],
+                                key=lambda x: np.linalg.norm(np.array(x['position']) - np.array(self.Position)))
+            
+            if DEBUG['messages']:
+                print(f"\n=== Car {self.id} Sending Message ===")
+                print(f"To Traffic Light: {nearest_light['light'].direction}")
+                print(f"Time: {self.model.t}")
+                print(f"Distance to light: {round(np.linalg.norm(np.array(nearest_light['position']) - np.array(self.Position)), 2)}")
+            
+            Message(
+                sender=self.id,
+                receiver=nearest_light['light'].direction,
+                performative="car_arrival",
+                content={"time": self.model.t}
+            ).send()
 
     """ 
     Functions to simulate movement 
@@ -176,7 +257,7 @@ class CuboAgentVelocity(ap.Agent):
     def set_jerk(self, jerk):
         self.jerk += jerk
     
-    def update_velocity(self):
+    def update_velocity(self): 
         self.acc += self.jerk * time_per_step
         self.vel += self.acc * time_per_step
         if abs(self.acc) < 1e-5:
@@ -191,93 +272,105 @@ class CuboAgentVelocity(ap.Agent):
         # print("acc", self.acc)
         # print("delta_pos", self.delta_pos)
         # print("---------")
+        
+    def update_velocity_considering_lights(self):
+        perception = self.perceive_environment()
+        
+        if perception['lights']:
+            nearest_light = min(perception['lights'], 
+                                key=lambda x: np.linalg.norm(np.array(x['position']) - np.array(self.Position)))
+            
+            if nearest_light['state'] == 'Red':
+                self.start_movement(CarMovement.STOPPING)
+            elif nearest_light['state'] == "Green":
+                self.start_movement(CarMovement.ACCELERATING)
     
     def reset_position(self):
         self.Position = [0,self.scale,0]
         # self.acc = 0
         # self.vel = 0
 
-class CuboModel(ap.Model):
+# class CuboModel(ap.Model):
 
-    def setup(self):
-        self.cubos = ap.AgentList(self,self.p.cubos,CuboAgentVelocity)
-        self.collisions = 0
-        pass
+#     def setup(self):
+#         self.cubos = ap.AgentList(self, self.p.cubos, CuboAgentVelocity)
+#         self.collisions = 0
+#         pass
 
-    def step(self):
-        self.cubos.step()
-        pass
+#     def step(self):
+#         self.cubos.step()
+#         pass
 
-    def update(self):
-        self.cubos.update()
-        self.record('Cantidad de colisiones', self.collisions)
-        self.collisions = 0
-        pass
+#     def update(self):
+#         self.cubos.update()
+#         self.record('Cantidad de colisiones', self.collisions)
+#         self.collisions = 0
+#         pass
 
-    def end(self):
-        pass
+#     def end(self):
+#         pass
 
 
-parameters = {
-   'cubos' : 2,
-   'dim' : 200,
-   'vel' : 2.0,
-   'Scale' : 5.0,
-   #'steps' : 100
-}
+# parameters = {
+#    'cubos' : 2,
+#    'dim' : 200,
+#    'vel' : 2.0,
+#    'Scale' : 5.0,
+#    #'steps' : 100
+# }
 
-model = CuboModel(parameters)
+# model = CuboModel(parameters)
 
-STEP = 5
+# STEP = 5
 
-done = False
-PlanoCubos.Init()
-model.sim_setup()
-while not done:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            done = True
-            model.stop()
-            model.create_output()
-            model.output.info['Mensaje'] = 'Puedes añadir información al registro de esta forma.'
-        elif event.type == pygame.KEYDOWN:
-            # Check for a specific key (e.g., SPACE key) to change velocity
-            if event.key == pygame.K_UP:  # UP key
-                for agent in model.cubos:
-                    agent.start_movement(CarMovement.ACCELERATING)
+# done = False
+# PlanoCubos.Init()
+# model.sim_setup()
+# while not done:
+#     for event in pygame.event.get():
+#         if event.type == pygame.QUIT:
+#             done = True
+#             model.stop()
+#             model.create_output()
+#             model.output.info['Mensaje'] = 'Puedes añadir información al registro de esta forma.'
+#         elif event.type == pygame.KEYDOWN:
+#             # Check for a specific key (e.g., SPACE key) to change velocity
+#             if event.key == pygame.K_UP:  # UP key
+#                 for agent in model.cubos:
+#                     agent.start_movement(CarMovement.ACCELERATING)
                     
-            if event.key == pygame.K_DOWN:  # DOWN key
-                for agent in model.cubos:
-                    agent.start_movement(CarMovement.STOPPING)
+#             if event.key == pygame.K_DOWN:  # DOWN key
+#                 for agent in model.cubos:
+#                     agent.start_movement(CarMovement.STOPPING)
                     
-            if event.key == pygame.K_SPACE:  # SPACE key
-                for agent in model.cubos:
-                    agent.reset_position()
+#             if event.key == pygame.K_SPACE:  # SPACE key
+#                 for agent in model.cubos:
+#                     agent.reset_position()
                     
-            if event.key == pygame.K_a:
-                tar_ref.Position[0] -= STEP
+#             if event.key == pygame.K_a:
+#                 tar_ref.Position[0] -= STEP
                 
-            elif event.key == pygame.K_d:
-                tar_ref.Position[0] += STEP
+#             elif event.key == pygame.K_d:
+#                 tar_ref.Position[0] += STEP
                 
-            elif event.key == pygame.K_w:
-                tar_ref.Position[2] -= STEP
+#             elif event.key == pygame.K_w:
+#                 tar_ref.Position[2] -= STEP
                 
                 
-            elif event.key == pygame.K_s:
-                tar_ref.Position[2] += STEP
+#             elif event.key == pygame.K_s:
+#                 tar_ref.Position[2] += STEP
             
 
-    PlanoCubos.display(parameters['dim'])
+#     PlanoCubos.display(parameters['dim'])
     
-    if model.running:
-        model.sim_step()
+#     if model.running:
+#         model.sim_step()
     
 
-    pygame.display.flip()
-    pygame.time.wait(100)
+#     pygame.display.flip()
+#     pygame.time.wait(100)
 
-pygame.quit()
+# pygame.quit()
 
 # print(model.output.info)
 # model.output.variables.CuboModel.plot()
