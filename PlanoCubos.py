@@ -1,6 +1,3 @@
-#Autor: Ivan Olmos Pineda
-#Curso: Multiagentes - Graficas Computacionales
-
 import pygame
 from pygame.locals import *
 
@@ -52,19 +49,19 @@ pygame.init()
 def Axis():
     glShadeModel(GL_FLAT)
     glLineWidth(3.0)
-    #X axis in red
+    #X axis en rojo
     glColor3f(1.0,0.0,0.0)
     glBegin(GL_LINES)
     glVertex3f(X_MIN,0.0,0.0)
     glVertex3f(X_MAX,0.0,0.0)
     glEnd()
-    #Y axis in green
+    #Y axis en verde
     glColor3f(0.0,1.0,0.0)
     glBegin(GL_LINES)
     glVertex3f(0.0,Y_MIN,0.0)
     glVertex3f(0.0,Y_MAX,0.0)
     glEnd()
-    #Z axis in blue
+    #Z axis en azul
     glColor3f(0.0,0.0,1.0)
     glBegin(GL_LINES)
     glVertex3f(0.0,0.0,Z_MIN)
@@ -96,7 +93,7 @@ def load_texture(filename):
     return texture_id
 
 def Init():
-    global floor_texture, semaforos  # Declare semaforos as global
+    global floor_texture, semaforos  # Declaramos las variables como globales
     screen = pygame.display.set_mode(
         (screen_width, screen_height), DOUBLEBUF | OPENGL)
     pygame.display.set_caption("OpenGL: cubos")
@@ -104,10 +101,10 @@ def Init():
     # Se carga
     
     semaforos = [
-    Semaforo(init_pos=(-45, 10, -60), rotation=0),    # BL
-    Semaforo(init_pos=(60, 10, -45), rotation=270),    # BR
-    Semaforo(init_pos=(-60, 10, 45), rotation=90),   # TL
-    Semaforo(init_pos=(45, 10, 60), rotation=180)     # TR
+    Semaforo(init_pos=(-45, 10, -60), rotation=0),    # bottom left
+    Semaforo(init_pos=(60, 10, -45), rotation=270),    # bottom right
+    Semaforo(init_pos=(-60, 10, 45), rotation=90),   # top left
+    Semaforo(init_pos=(45, 10, 60), rotation=180)     # top right
 ]
     
     floor_texture = load_texture('Assets/4wayStreet.png')
