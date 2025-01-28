@@ -6,6 +6,8 @@ import random
 import pygame
 import matplotlib.pyplot as plt
 
+global tar_reference, tar_2
+
 class CuboAgent(ap.Agent):
 
     def setup(self):
@@ -32,10 +34,21 @@ class CuboAgent(ap.Agent):
         self.Direction[2] *= self.vel
         #deteccion de colision
         self.collision = False
+        
+        if self.id == 2:
+            global tar_reference
+            tar_reference = self
+            
+        if self.id == 1:
+            global tar_2
+            tar_2 = self
+        
 
-        self.g_cubo = Cubo.Cubo(self.Position)
+        self.g_cubo = Cubo.Cubo(self.Position, self.id)
+        
+        self.Direction = [0,0,0]
+                
         self.g_cubo.draw(self.Position,self.scale)
-        pass
 
     def step(self):
         self.collision = False
@@ -48,6 +61,7 @@ class CuboAgent(ap.Agent):
             self.Direction[0] *= -1.0
             new_x = self.Position[0] + self.Direction[0]
             new_z = self.Position[2] + self.Direction[2]
+            
 
         if(abs(new_x) <= self.DimBoard):
             self.Position[0] = new_x
@@ -61,6 +75,15 @@ class CuboAgent(ap.Agent):
             self.Direction[2] *= -1.0
             self.Position[2] += self.Direction[2]
         pass
+    
+        perceived = self.g_cubo.perceive_objects(self.model.cubos)
+        
+        self.g_cubo.set_position(self.Position)
+        
+        if self.id == 1 and len(perceived) > 1:
+            print("perceived: ", len(perceived))
+    
+    
 
     def update(self):
         self.g_cubo.draw(self.Position, self.scale)
@@ -97,7 +120,7 @@ class CuboModel(ap.Model):
 
 
 parameters = {
-   'cubos' : 100,
+   'cubos' : 3,
    'dim' : 200,
    'vel' : 2.0,
    'Scale' : 5.0,
@@ -109,6 +132,8 @@ model = CuboModel(parameters)
 done = False
 PlanoCubos.Init()
 model.sim_setup()
+
+STEP = 5
 while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -116,13 +141,35 @@ while not done:
             model.stop()
             model.create_output()
             model.output.info['Mensaje'] = 'Puedes añadir información al registro de esta forma.'
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                tar_reference.Position[0] -= STEP
+                
+            elif event.key == pygame.K_RIGHT:
+                tar_reference.Position[0] += STEP
+                
+            elif event.key == pygame.K_UP:
+                tar_reference.Position[2] -= STEP
+                
+            elif event.key == pygame.K_DOWN:
+                tar_reference.Position[2] += STEP
+                
+            elif event.key == pygame.K_w:
+                STEP += 1
+            elif event.key == pygame.K_s:
+                STEP -= 1
+
+            print("TAR POSITION:", tar_reference.Position)
+
+            print("obj with light:", tar_2.Position)
+
+
 
     PlanoCubos.display(parameters['dim'])
     
     if model.running:
         model.sim_step()
-    
-
+        
     pygame.display.flip()
     pygame.time.wait(10)
 
