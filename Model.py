@@ -5,7 +5,7 @@ import math
 import random
 import pygame
 import matplotlib.pyplot as plt
-
+from SemaforoAgent import SemaforoAgent
 class CuboAgent(ap.Agent):
 
     def setup(self):
@@ -80,9 +80,15 @@ class CuboModel(ap.Model):
     def setup(self):
         self.cubos = ap.AgentList(self,self.p.cubos,CuboAgent)
         self.collisions = 0
+        
+        self.semaforos = ap.AgentList(self, 4, SemaforoAgent)  # 4 traffic lights
+        directions = ['up', 'right', 'down', 'left']
+        for i, semaforo in enumerate(self.semaforos):
+            semaforo.setup_direction(directions[i])
         pass
 
     def step(self):
+        self.semaforos.step()
         self.cubos.step()
         pass
 

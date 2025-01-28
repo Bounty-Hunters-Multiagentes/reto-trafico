@@ -4,11 +4,11 @@ import math
 
 class SemaforoAgent(ap.Agent):
 
-    def setup(self, direction):
+    def setup(self):
         """
         Initialize the traffic light agent with its direction and initial settings.
         """
-        self.direction = direction  # up, down, left, right
+        self.direction = ""  # up, down, left, right
         self.first_car_arrival = 99999999  # Initially very large number
         self.green_time = 30  # Time for green light
         self.yellow_time = 10  # Time for yellow light
@@ -19,6 +19,9 @@ class SemaforoAgent(ap.Agent):
         self.first_car_arrivals = { "up": 99999999, "down": 99999999, "left": 99999999, "right": 99999999 }  # Initialize dictionary for all directions
         self.reported = False  # To track if the agent has already reported its first car arrival
 
+    def setup_direction(self, direction):
+        self.direction = direction
+        
     def take_msg(self):
         """
         Process incoming messages from cars or other traffic lights.
@@ -107,13 +110,18 @@ class SemaforoAgent(ap.Agent):
             self.intention = None  # Reset intention after applying it
 
         # Print current state
+        
+        """
         if self.state == "Green":
+            pass
             print(f"Traffic light {self.direction} is GREEN.")
         elif self.state == "Yellow":
+            pass
             print(f"Traffic light {self.direction} is YELLOW.")
         elif self.state == "Red":
+            pass
             print(f"Traffic light {self.direction} is RED.")
-
+        """
     def step(self):
         """
         Main step function: see, decide the next state, and perform the action.
