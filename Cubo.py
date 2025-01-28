@@ -13,12 +13,15 @@ import numpy as np
 import random
 import math
 
+from constants import CAR_PATH
+from objloader import OBJ
+
+
 class Cubo:
     
-    def __init__(self, init_pos=(0,0,0)):
+    def __init__(self, init_pos=(0,0,0), scale=1, id=-1):
         self.points = np.array([[-1.0,-1.0, 1.0], [1.0,-1.0, 1.0], [1.0,-1.0,-1.0], [-1.0,-1.0,-1.0],
                                 [-1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0,-1.0], [-1.0, 1.0,-1.0]])
-
         self.Position = list(init_pos)
 
     def drawFaces(self):
@@ -59,9 +62,10 @@ class Cubo:
         glVertex3fv(self.points[7])
         glEnd()
     
-    def draw(self, Position, scale):
+    def draw(self, Position, scale=5):
         glPushMatrix()
         glTranslatef(Position[0], Position[1], Position[2])
+        
         glScaled(scale,scale,scale)
         glColor3f(1.0, 1.0, 1.0)
         self.drawFaces()

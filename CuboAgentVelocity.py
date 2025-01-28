@@ -1,5 +1,6 @@
 import agentpy as ap 
 import Cubo
+import Car
 import PlanoCubos 
 import math
 import random
@@ -27,6 +28,8 @@ class CarMovement(Enum):
     STOPPING = 2
     
 time_per_step = 0.1
+tar_ref = None
+
 
 """
     Fast accelerating agent
@@ -83,8 +86,16 @@ class CuboAgentVelocity(ap.Agent):
         # Deteccion de colision
         self.collision = False
 
-        self.g_cubo = Cubo.Cubo(self.Position)
-        self.g_cubo.draw(self.Position,self.scale)
+        if self.id == 1:
+            self.g_cubo = Car.Car(self.Position,scale=5)
+        else:
+            self.g_cubo = Cubo.Cubo(self.Position, scale=5)
+            
+            if self.id == 2:
+                global tar_ref
+                tar_ref = self
+
+        self.g_cubo.draw(self.Position)
 
     def step(self):
         if self.car_movement == CarMovement.ACCELERATING:
@@ -93,6 +104,10 @@ class CuboAgentVelocity(ap.Agent):
             self.control_jerk(-self.jerk_delta)
         
         self.update_velocity()
+        
+        if self.id == 1:
+            self.objects_perceived()
+
         # No colisión por ahora, solo limites del mapa
         new_pos = np.array(self.Position) + self.delta_pos 
         if abs(new_pos[0]) > self.DimBoard or abs(new_pos[2]) > self.DimBoard:
@@ -102,7 +117,7 @@ class CuboAgentVelocity(ap.Agent):
             self.Position[2] = new_pos[2]
 
     def update(self):
-        self.g_cubo.draw(self.Position, self.scale)
+        self.g_cubo.draw(self.Position)
 
     def CollitionDetection(self):
         for ag in self.model.cubos:
@@ -113,6 +128,11 @@ class CuboAgentVelocity(ap.Agent):
                 if d_c - (self.radio + ag.radio) < 0.0:
                     self.collision = True
                     self.model.collisions += 1
+                    
+    def objects_perceived(self):
+        perceived = self.g_cubo.perceive_objects(self.model.cubos)
+       
+        print(f"Perceived  {len(perceived)} objects")
 
     """ 
     Functions to simulate movement 
@@ -122,6 +142,9 @@ class CuboAgentVelocity(ap.Agent):
     def start_movement(self, new_car_movement):
         # Cannot start movement when other is in progrees
         if self.car_movement != CarMovement.NONE:
+            return
+        
+        if self.id == 2:
             return
 
         self.car_movement = new_car_movement
@@ -143,7 +166,7 @@ class CuboAgentVelocity(ap.Agent):
         elif self.jerk_state == JerkState.REVERSE:
             self.change_jerk_state(JerkState.NONE, 0, 0) # Return time at 0
             self.car_movement = CarMovement.NONE
-        print("myState", self.jerk_state)
+        # print("myState", self.jerk_state)
         
     def change_jerk_state(self, new_state, new_jerk, jerk_time):
         self.jerk_state = new_state
@@ -163,11 +186,11 @@ class CuboAgentVelocity(ap.Agent):
         
         self.delta_pos = np.array(self.Direction)
         self.delta_pos *= self.vel
-        print("jerk", self.jerk)
-        print("vel", self.vel)
-        print("acc", self.acc)
-        print("delta_pos", self.delta_pos)
-        print("---------")
+        # print("jerk", self.jerk)
+        # print("vel", self.vel)
+        # print("acc", self.acc)
+        # print("delta_pos", self.delta_pos)
+        # print("---------")
     
     def reset_position(self):
         self.Position = [0,self.scale,0]
@@ -196,7 +219,7 @@ class CuboModel(ap.Model):
 
 
 parameters = {
-   'cubos' : 1,
+   'cubos' : 2,
    'dim' : 200,
    'vel' : 2.0,
    'Scale' : 5.0,
@@ -204,6 +227,8 @@ parameters = {
 }
 
 model = CuboModel(parameters)
+
+STEP = 5
 
 done = False
 PlanoCubos.Init()
@@ -228,6 +253,19 @@ while not done:
             if event.key == pygame.K_SPACE:  # SPACE key
                 for agent in model.cubos:
                     agent.reset_position()
+                    
+            if event.key == pygame.K_a:
+                tar_ref.Position[0] -= STEP
+                
+            elif event.key == pygame.K_d:
+                tar_ref.Position[0] += STEP
+                
+            elif event.key == pygame.K_w:
+                tar_ref.Position[2] -= STEP
+                
+                
+            elif event.key == pygame.K_s:
+                tar_ref.Position[2] += STEP
             
 
     PlanoCubos.display(parameters['dim'])
