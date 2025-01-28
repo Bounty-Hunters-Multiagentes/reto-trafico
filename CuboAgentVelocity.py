@@ -28,7 +28,7 @@ class CarMovement(Enum):
     
 time_per_step = 0.1
 
-class CuboAgent(ap.Agent):
+class CuboAgentVelocity(ap.Agent):
 
     def setup(self):
         self.vel = 0
@@ -166,7 +166,7 @@ class CuboAgent(ap.Agent):
 class CuboModel(ap.Model):
 
     def setup(self):
-        self.cubos = ap.AgentList(self,self.p.cubos,CuboAgent)
+        self.cubos = ap.AgentList(self,self.p.cubos,CuboAgentVelocity)
         self.collisions = 0
         pass
 
