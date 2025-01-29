@@ -254,7 +254,7 @@ class CuboAgentVelocity(ap.Agent):
         }
     
     def send_arrival_message(self):
-        if self.perception['lights'] and self.nearest_light:
+        if self.perception['lights'] and self.nearest_light and self.nearest_light['state'] == 'Red':
             if DEBUG['messages']:
                 print(f"\n=== Car {self.id} Sending Message ===")
                 print(f"To Traffic Light: {self.nearest_light['light'].direction}")
