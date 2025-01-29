@@ -19,7 +19,7 @@ ALL_CAR_PATHS = [
 # Debug messages
 DEBUG = {
     'perception': False,
-    'messages': False,
+    'messages': True,
     'movement': False,
-    'move_decision': True,
+    'move_decision': False,
 }

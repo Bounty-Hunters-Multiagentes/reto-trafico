@@ -60,9 +60,9 @@ class CuboAgentVelocity(ap.Agent):
         self.jerk = 0
         
         # State variables to control car movement
-        self.jerk_delta = 10 # How much jerk to increase or decrease when accelerating or stopping
-        self.jerk_time_acc = 0.5 # How much time to have jerk positive 
-        self.jerk_time_wait = 0.5 # How much time to have jerk at 0
+        self.jerk_delta = 100 # How much jerk to increase or decrease when accelerating or stopping
+        self.jerk_time_acc = 0.2 # How much time to have jerk positive 
+        self.jerk_time_wait = 0.1 # How much time to have jerk at 0
         self.jerk_state = JerkState.NONE # State of accelerating of deaccelerating
         self.state_timer = 0 # Timer to know when to change states
         self.car_movement = CarMovement.NONE # Whether accelerating, stopping, or none. MANUAL CHANGES ONLY
@@ -276,6 +276,12 @@ class CuboAgentVelocity(ap.Agent):
     def start_movement(self, new_car_movement):
         # Cannot start movement when other is in progrees
         if self.car_movement != CarMovement.NONE:
+            return
+        
+        if new_car_movement == CarMovement.STOPPING and self.vel <= 0:
+            return
+        
+        if new_car_movement == CarMovement.ACCELERATING and self.vel > 0:
             return
         
         # if self.id == 2:
