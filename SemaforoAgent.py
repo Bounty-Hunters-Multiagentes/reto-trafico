@@ -70,10 +70,10 @@ class SemaforoAgent(ap.Agent):
 
             if (arrival_times[0][0], self.direction) == arrival_times[0]:
                 self.intention = "Green"
+                self.first_car_arrival = 99999999
 
             # Reset the first_car_arrivals dictionary after processing red_finished messages
-            self.first_car_arrivals = { "up": 99999999, "down": 99999999, "left": 99999999, "right": 99999999 }
-            self.first_car_arrival = 99999999
+            # self.first_car_arrivals = { "up": 99999999, "down": 99999999, "left": 99999999, "right": 99999999 }
             # Do NOT reset first_car_arrivals immediately—wait until all messages are processed
             Message.environment_buffer.remove(msg)
 

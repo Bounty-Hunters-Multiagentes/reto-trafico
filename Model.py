@@ -374,7 +374,7 @@ class CuboModel(ap.Model):
         for i, semaforo in enumerate(self.semaforos):
             semaforo.setup_direction(directions[i])
             semaforo.setup_semaforo(semaforo_info[i])
-            semaforo.setup_color_time(300, 100) # la cantidad de pasos que va a estar prendida la luz verde y la amarilla antes de cambiar de semaforo
+            semaforo.setup_color_time(30, 10) # la cantidad de pasos que va a estar prendida la luz verde y la amarilla antes de cambiar de semaforo
         
         global decorations
         decorations = [
