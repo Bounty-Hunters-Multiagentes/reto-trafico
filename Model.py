@@ -340,10 +340,25 @@ class CuboAgentVelocity(ap.Agent):
         self.vel = 0
         self.start_movement(CarMovement.ACCELERATING)
 
+        
+class GrandmaDrivingAgent(CuboAgentVelocity):
+    def setup(self):
+        super().setup()
+        self.jerk_delta = 50
+        
+class WannabeRacerAgent(CuboAgentVelocity):
+    def setup(self):
+        super().setup()
+        self.jerk_delta = 200
+        
+class LawAbidingAgent(CuboAgentVelocity):
+    def setup(self):
+        super().setup()
+        self.jerk_delta = 120
+
 class CuboModel(ap.Model):
 
     def setup(self):
-        self.cubos = ap.AgentList(self, self.p.cubos, CuboAgentVelocity)
         self.semaforos = ap.AgentList(self, 4, SemaforoAgent)
         directions = ['up', 'down', 'left', 'rigth']
         offset = 35
@@ -361,8 +376,13 @@ class CuboModel(ap.Model):
             'west': {'pos': (-self.p.dim, self.p.Scale, offset), 'direction': [1.0, 0.0, 0.0]}
         }
         
+        self.cartype1 = ap.AgentList(self, 1, CuboAgentVelocity)
+        self.cartype2 = ap.AgentList(self, 1, GrandmaDrivingAgent)
+        self.cartype3 = ap.AgentList(self, 1, WannabeRacerAgent)
+        self.cartype4 = ap.AgentList(self, 1, LawAbidingAgent)
+        
          # Initialize agents
-        self.cubos = ap.AgentList(self, self.p.cubos, CuboAgentVelocity)
+        self.cubos = self.cartype1 + self.cartype2 + self.cartype3 + self.cartype4
         
         # Distribute cars evenly among spawn points
         spawn_locations = list(self.spawn_points.values())
@@ -408,7 +428,7 @@ class CuboModel(ap.Model):
 
 
 parameters = {
-   'cubos' : 7,
+   'cubos' : 4,
    'dim' : 200,
    'vel' : 2.0,
    'Scale' : 5.0,
