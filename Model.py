@@ -171,7 +171,6 @@ class CuboAgentVelocity(ap.Agent):
         self.last_seen_lights = bool(self.perception['lights'])
         
         # CAR MOVEMENT
-        # TODO: Confirm that its not already accelerating or stopped!
         if self.intention == CarMovement.ACCELERATING:
             self.start_movement(CarMovement.ACCELERATING)
         elif self.intention == CarMovement.STOPPING:
@@ -185,6 +184,7 @@ class CuboAgentVelocity(ap.Agent):
             
         self.update_velocity()
     
+    # TODO: También que verifique si no va a chocar con otro carro
     def rule_1(self, action):
         return bool(self.nearest_light and action == CarMovement.ACCELERATING and self.nearest_light['state'] == 'Green')
 
@@ -251,21 +251,16 @@ class CuboAgentVelocity(ap.Agent):
         }
     
     def send_arrival_message(self):
-        perception = self.perceive_environment()
-        
-        if perception['lights']:
-            nearest_light = min(perception['lights'],
-                                key=lambda x: np.linalg.norm(np.array(x['position']) - np.array(self.Position)))
-            
+        if self.perception['lights'] and self.nearest_light:
             if DEBUG['messages']:
                 print(f"\n=== Car {self.id} Sending Message ===")
-                print(f"To Traffic Light: {nearest_light['light'].direction}")
+                print(f"To Traffic Light: {self.nearest_light['light'].direction}")
                 print(f"Time: {self.model.t}")
-                print(f"Distance to light: {round(np.linalg.norm(np.array(nearest_light['position']) - np.array(self.Position)), 2)}")
+                print(f"Distance to light: {round(np.linalg.norm(np.array(self.nearest_light['position']) - np.array(self.Position)), 2)}")
             
             Message(
                 sender=self.id,
-                receiver=nearest_light['light'].direction,
+                receiver=self.nearest_light['light'].direction,
                 performative="car_arrival",
                 content={"time": self.model.t}
             ).send()
