@@ -22,6 +22,8 @@ class Cubo:
         self.points = np.array([[-1.0,-1.0, 1.0], [1.0,-1.0, 1.0], [1.0,-1.0,-1.0], [-1.0,-1.0,-1.0],
                                 [-1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0,-1.0], [-1.0, 1.0,-1.0]])
         self.Position = list(init_pos)
+        
+    
 
     def drawFaces(self):
         glBegin(GL_QUADS)

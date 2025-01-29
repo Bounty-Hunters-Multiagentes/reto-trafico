@@ -14,6 +14,7 @@ import numpy as np
 
 from Lane import lane_map
 from Decoration import Decoration
+import random
 
 
 class Direction(Enum):
@@ -67,7 +68,9 @@ class CuboAgentVelocity(ap.Agent):
         self.car_movement = CarMovement.NONE # Whether accelerating, stopping, or none
         self.last_seen_lights = False
         
-        self.lane = self.model.nprandom.choice(list(lane_map.values()))        
+        self.lane = self.model.nprandom.choice(list(lane_map.values()))     
+        
+        self.Direction = np.array(self.lane.direction, dtype=np.float64)   
         
         self.scale = self.model.p.Scale
         self.radio = math.sqrt(self.scale*self.scale + self.scale*self.scale)
@@ -137,7 +140,7 @@ class CuboAgentVelocity(ap.Agent):
         # No colisión por ahora, solo limites del mapa
         new_pos = np.array(self.Position) + self.delta_pos 
         if abs(new_pos[0]) > self.DimBoard or abs(new_pos[2]) > self.DimBoard:
-             self.reset_position()
+            self.reset_position()
         else:
             self.Position[0] = new_pos[0]
             self.Position[2] = new_pos[2]
@@ -292,9 +295,11 @@ class CuboAgentVelocity(ap.Agent):
                 self.start_movement(CarMovement.ACCELERATING)
     
     def reset_position(self):
-        self.Position = [0,self.scale,0]
-        # self.acc = 0
-        # self.vel = 0
+        spawn = random.choice(list(self.model.spawn_points.values()))
+        self.Position = list(spawn['pos'])
+        self.Direction = np.array(spawn['direction'], dtype=np.float64)
+        self.acc = 0
+        self.vel = 0
 
 class CuboModel(ap.Model):
 
@@ -302,12 +307,31 @@ class CuboModel(ap.Model):
         self.cubos = ap.AgentList(self, self.p.cubos, CuboAgentVelocity)
         self.semaforos = ap.AgentList(self, 4, SemaforoAgent)
         directions = ['up', 'down', 'left', 'rigth']
+        offset = 35
         semaforo_info = [
             {'init_pos': (45, 10, 60), 'rotation': 180},  # For 'up'
             {'init_pos': (-45, 10, -60), 'rotation': 0},  # For 'down'
             {'init_pos': (60, 10, -45), 'rotation': 270}, # For 'right'
             {'init_pos': (-60, 10, 45), 'rotation': 90},  # For 'left'
         ]
+        
+        self.spawn_points = {
+            'north': {'pos': (-offset, self.p.Scale, -self.p.dim), 'direction': [0.0, 0.0, 1.0]},
+            'south': {'pos': (offset, self.p.Scale, self.p.dim), 'direction': [0.0, 0.0, -1.0]},
+            'east': {'pos': (self.p.dim, self.p.Scale, -offset), 'direction': [-1.0, 0.0, 0.0]},
+            'west': {'pos': (-self.p.dim, self.p.Scale, offset), 'direction': [1.0, 0.0, 0.0]}
+        }
+        
+         # Initialize agents
+        self.cubos = ap.AgentList(self, self.p.cubos, CuboAgentVelocity)
+        
+        # Distribute cars evenly among spawn points
+        spawn_locations = list(self.spawn_points.values())
+        for i, agent in enumerate(self.cubos):
+            spawn = spawn_locations[i % len(spawn_locations)]
+            agent.Position = list(spawn['pos'])
+            agent.Direction = spawn['direction']
+        
         
         for i, semaforo in enumerate(self.semaforos):
             semaforo.setup_direction(directions[i])
