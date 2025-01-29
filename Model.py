@@ -1,20 +1,19 @@
-import agentpy as ap 
-import Cubo
-import Car
-import PlanoCubos 
 import math
-import pygame
-import matplotlib.pyplot as plt
-from SemaforoAgent import SemaforoAgent
-
-from enum import Enum
-from Message import Message
-from constants import DEBUG
-import numpy as np
-
-from Lane import lane_map
-from Decoration import Decoration
 import random
+from enum import Enum
+
+import agentpy as ap
+import numpy as np
+import pygame
+
+import Car
+import Cubo
+import PlanoCubos
+from constants import DEBUG
+from Decoration import Decoration
+from Lane import lane_map
+from Message import Message
+from SemaforoAgent import SemaforoAgent
 
 
 class Direction(Enum):
@@ -68,6 +67,8 @@ class CuboAgentVelocity(ap.Agent):
         self.car_movement = CarMovement.ACCELERATING # Whether accelerating, stopping, or none.
         self.last_seen_lights = False
         
+        self.brake_distance = 10
+        
         self.lane = self.model.nprandom.choice(list(lane_map.values()))     
         
         self.Direction = np.array(self.lane.direction, dtype=np.float64)   
@@ -110,8 +111,8 @@ class CuboAgentVelocity(ap.Agent):
         self.perception = None
         self.intention = CarMovement.NONE
         self.nearest_light = None
-        self.rules = [self.rule_1, self.rule_2, self.rule_3] # Orden importa
-        self.actions = [CarMovement.ACCELERATING, CarMovement.STOPPING, CarMovement.NONE] # Orden importa
+        self.rules = [self.rule_0, self.rule_1, self.rule_2, self.rule_3] # Orden importa
+        self.actions = [CarMovement.STOPPING, CarMovement.ACCELERATING, CarMovement.STOPPING, CarMovement.NONE] # Orden importa
 
         if self.id == 1:
             global tar_ref
@@ -156,6 +157,12 @@ class CuboAgentVelocity(ap.Agent):
                                 key=lambda x: np.linalg.norm(np.array(x['position']) - np.array(self.Position)))
         else: 
             self.nearest_light = None
+            
+        if self.perception['cars']:
+            self.nearest_car = min(self.perception['cars'], 
+                                key=lambda x: np.linalg.norm(np.array(x.Position) - np.array(self.Position)))
+        else: 
+            self.nearest_car = None
     
     def next(self):
         for action in self.actions:
@@ -187,7 +194,9 @@ class CuboAgentVelocity(ap.Agent):
             
         self.update_velocity()
     
-    # TODO: También que verifique si no va a chocar con otro carro
+    def rule_0(self, action):
+        return bool(self.nearest_car and action == CarMovement.STOPPING and self.compute_distance(self.nearest_car) < self.brake_distance)
+
     def rule_1(self, action):
         return bool(self.nearest_light and action == CarMovement.ACCELERATING and self.nearest_light['state'] == 'Green')
 
@@ -252,6 +261,14 @@ class CuboAgentVelocity(ap.Agent):
             'cars': cars,
             'lights': light_info
         }
+    
+    def compute_distance(self, car):
+        if car is None:
+            return 1e9
+        asd = np.linalg.norm(np.array(car.Position) - np.array(self.Position))
+        
+        print("DISTANCE ASDDASD: ", asd)
+        return np.linalg.norm(np.array(car.Position) - np.array(self.Position))
     
     def send_arrival_message(self):
         if self.perception['lights'] and self.nearest_light and self.nearest_light['state'] == 'Red':
@@ -354,7 +371,7 @@ class WannabeRacerAgent(CuboAgentVelocity):
 class LawAbidingAgent(CuboAgentVelocity):
     def setup(self):
         super().setup()
-        self.jerk_delta = 90
+        self.jerk_delta = 200
 
 class CuboModel(ap.Model):
 
