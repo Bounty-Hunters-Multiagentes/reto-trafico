@@ -8,7 +8,7 @@ CAR_PATH_SINTO_CAR = 'Assets/sinto_car/sinto_car.obj'
 CAR_PATH_CARTON_CAR = 'Assets/carton_car/material/carton_car.obj'
 
 ALL_CAR_PATHS = [
-    CAR_PATH_MUSTANG,
+    # CAR_PATH_MUSTANG,
     CAR_PATH_RIXA_TAXI,
     CAR_PATH_ORANGE_CAR,
     CAR_PATH_POLICE_CAR,
