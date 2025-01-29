@@ -47,14 +47,15 @@ class Car:
         glRotatef(self.rotation, 0, 1, 0)  # Rota en el eje Y
 
         glColor3f(1.0, 1.0, 1.0)
-        glScaled(self.scale, self.scale, self.scale)
-
         glPushMatrix()
         glTranslatef(*self.light_offset)
+        glScaled(self.scale, self.scale, self.scale) # apply scale after translation
         glScaled(self.light_scale, self.light_scale, self.light_scale)
         self.car_light.draw()
 
         glPopMatrix()
+        # apply scale for the car
+        glScaled(self.scale, self.scale, self.scale)
 
         glRotatef(-90, 1, 0, 0)
         self.mustang.render()
