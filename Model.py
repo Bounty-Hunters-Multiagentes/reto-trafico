@@ -349,12 +349,12 @@ class GrandmaDrivingAgent(CuboAgentVelocity):
 class WannabeRacerAgent(CuboAgentVelocity):
     def setup(self):
         super().setup()
-        self.jerk_delta = 200
+        self.jerk_delta = 80
         
 class LawAbidingAgent(CuboAgentVelocity):
     def setup(self):
         super().setup()
-        self.jerk_delta = 120
+        self.jerk_delta = 90
 
 class CuboModel(ap.Model):
 
