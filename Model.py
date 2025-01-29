@@ -3,7 +3,6 @@ import Cubo
 import Car
 import PlanoCubos 
 import math
-import random
 import pygame
 import matplotlib.pyplot as plt
 from SemaforoAgent import SemaforoAgent
@@ -12,6 +11,8 @@ from enum import Enum
 from Message import Message
 from constants import DEBUG
 import numpy as np
+
+from Lane import lane_map
 
 class Direction(Enum):
     UP = 1
@@ -64,6 +65,7 @@ class CuboAgentVelocity(ap.Agent):
         self.car_movement = CarMovement.NONE # Whether accelerating, stopping, or none
         self.last_seen_lights = False
         
+        self.lane = lane_map["Left"] # self.model.nprandom.choice(list(lane_map.values()))        
         
         self.scale = self.model.p.Scale
         self.radio = math.sqrt(self.scale*self.scale + self.scale*self.scale)
@@ -71,15 +73,21 @@ class CuboAgentVelocity(ap.Agent):
         
         # Se inicializa una posicion aleatoria en el tablero
         self.Position = []
-        self.Position.append(random.randint(-1 * self.DimBoard, self.DimBoard))
+        # self.Position.append(self.model.random.uniform(self.lane.min_x, self.lane.max_x))
+        # self.Position.append(self.lane.max_x)
+        self.Position.append((self.lane.max_x + self.lane.min_x) / 2)
+
+
         self.Position.append(self.scale)
-        self.Position.append(random.randint(-1 * self.DimBoard, self.DimBoard))
-        
+        # self.Position.append(self.model.random.randint(self.lane.min_z, self.lane.max_z))
+        # self.Position.append((self.lane.max_z + self.lane.min_z) / 2)
+        self.Position.append(self.lane.min_z)
+
         # Se inicializa un vector de direccion aleatorio
-        self.Direction = []
-        self.Direction.append(random.random())
-        self.Direction.append(self.scale)
-        self.Direction.append(random.random())
+        self.Direction = self.lane.direction
+        # self.Direction.append(random.random())
+        # self.Direction.append(self.scale)
+        # self.Direction.append(random.random())
         
         # Se normaliza el vector de direccion
         m = math.sqrt(self.Direction[0]*self.Direction[0] + self.Direction[2]*self.Direction[2])
