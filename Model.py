@@ -67,7 +67,7 @@ class CuboAgentVelocity(ap.Agent):
         self.car_movement = CarMovement.ACCELERATING # Whether accelerating, stopping, or none.
         self.last_seen_lights = False
         
-        self.brake_distance = 10
+        self.brake_distance = 50
         
         self.lane = self.model.nprandom.choice(list(lane_map.values()))     
         
@@ -112,9 +112,9 @@ class CuboAgentVelocity(ap.Agent):
         self.intention = CarMovement.NONE
         self.nearest_light = None
         self.rules = [self.rule_0, self.rule_1, self.rule_2, self.rule_3] # Orden importa
-        self.actions = [CarMovement.STOPPING, CarMovement.ACCELERATING, CarMovement.STOPPING, CarMovement.NONE] # Orden importa
+        self.actions = [CarMovement.STOPPING, CarMovement.ACCELERATING, CarMovement.NONE] # Orden importa
 
-        if self.id == 1:
+        if self.id == 1 and DEBUG['cube']:
             global tar_ref
             self.g_cubo = Cubo.Cubo(self.Position, scale=5)
             tar_ref = self
@@ -222,7 +222,7 @@ class CuboAgentVelocity(ap.Agent):
     # Posible funcion para reemplazar objects_perceived
     def perceive_environment(self):
         # Handle test object
-        if self.id == 1:
+        if self.id == 1 and DEBUG['cube']:
             cars = []
             lights = []
         else:
@@ -265,9 +265,6 @@ class CuboAgentVelocity(ap.Agent):
     def compute_distance(self, car):
         if car is None:
             return 1e9
-        asd = np.linalg.norm(np.array(car.Position) - np.array(self.Position))
-        
-        print("DISTANCE ASDDASD: ", asd)
         return np.linalg.norm(np.array(car.Position) - np.array(self.Position))
     
     def send_arrival_message(self):
@@ -300,9 +297,6 @@ class CuboAgentVelocity(ap.Agent):
         
         if new_car_movement == CarMovement.ACCELERATING and self.vel > 0:
             return
-        
-        # if self.id == 2:
-        #     return
 
         self.car_movement = new_car_movement
     
@@ -376,6 +370,15 @@ class LawAbidingAgent(CuboAgentVelocity):
 class CuboModel(ap.Model):
 
     def setup(self):
+        self.cartype1 = ap.AgentList(self, 1, CuboAgentVelocity)
+        self.cartype2 = ap.AgentList(self, 1, GrandmaDrivingAgent)
+        self.cartype3 = ap.AgentList(self, 1, WannabeRacerAgent)
+        self.cartype4 = ap.AgentList(self, 1, LawAbidingAgent)
+        
+        # Initialize agents
+        self.cubos = self.cartype1 + self.cartype2 + self.cartype3 + self.cartype4
+        
+        
         self.semaforos = ap.AgentList(self, 4, SemaforoAgent)
         directions = ['up', 'down', 'left', 'rigth']
         offset = 35
@@ -393,13 +396,9 @@ class CuboModel(ap.Model):
             'west': {'pos': (-self.p.dim, self.p.Scale, offset), 'direction': [1.0, 0.0, 0.0]}
         }
         
-        self.cartype1 = ap.AgentList(self, 1, CuboAgentVelocity)
-        self.cartype2 = ap.AgentList(self, 1, GrandmaDrivingAgent)
-        self.cartype3 = ap.AgentList(self, 1, WannabeRacerAgent)
-        self.cartype4 = ap.AgentList(self, 1, LawAbidingAgent)
         
-         # Initialize agents
-        self.cubos = self.cartype1 + self.cartype2 + self.cartype3 + self.cartype4
+        
+        
         
         # Distribute cars evenly among spawn points
         spawn_locations = list(self.spawn_points.values())
@@ -454,7 +453,7 @@ parameters = {
 
 model = CuboModel(parameters)
 
-STEP = 5
+STEP = 10
 
 done = False
 PlanoCubos.Init()
