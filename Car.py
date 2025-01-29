@@ -26,10 +26,10 @@ class Car:
         self.Position = list(init_pos)
         self.scale = scale
         self.light_scale = 1
-        self.light_offset = [0, 0, 0]
+        self.light_offset = [0, 0, 4]
         self.car_light = Frustum(
             0.3,
-            3,
+            5,
             10,
             32,
             car_reference=self,
