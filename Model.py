@@ -320,7 +320,9 @@ class CuboModel(ap.Model):
             Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(140,50,200), scale=0.2, rotation=[-90, 0, 90]),
             Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(20,50, 200), scale=0.2, rotation=[-90, 0, -90]),
 
-            Decoration("Assets/tree_2.obj", init_pos=(200,10,200), scale=0.1, rotation=[0, 0, 0])
+            Decoration("Assets/tree_2.obj", init_pos=(200,50,200), scale=0.1, rotation=[-90, 0, 0]),
+            Decoration("Assets/tree_2.obj", init_pos=(200,50,0), scale=0.1, rotation=[-90, 0, 0]),
+            Decoration("Assets/tree_2.obj", init_pos=(0,50,200), scale=0.1, rotation=[-90, 0, 0]),
         ]
         self.collisions = 0
 
