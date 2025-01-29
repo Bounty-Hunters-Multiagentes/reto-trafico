@@ -1,3 +1,6 @@
 .DS_Store
 __pycache__
 simulation.html
+
+*.blend
+*.blend1
