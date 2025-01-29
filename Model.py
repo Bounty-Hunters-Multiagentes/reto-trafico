@@ -65,7 +65,7 @@ class CuboAgentVelocity(ap.Agent):
         self.jerk_time_wait = 0.5 # How much time to have jerk at 0
         self.jerk_state = JerkState.NONE # State of accelerating of deaccelerating
         self.state_timer = 0 # Timer to know when to change states
-        self.car_movement = CarMovement.NONE # Whether accelerating, stopping, or none
+        self.car_movement = CarMovement.NONE # Whether accelerating, stopping, or none. MANUAL CHANGES ONLY
         self.last_seen_lights = False
         
         self.lane = self.model.nprandom.choice(list(lane_map.values()))     
@@ -105,6 +105,13 @@ class CuboAgentVelocity(ap.Agent):
         
         # Deteccion de colision
         self.collision = False
+        
+        # Agent knowledge
+        self.perception = None
+        self.intention = CarMovement.NONE
+        self.nearest_light = None
+        self.rules = [self.rule_1, self.rule_2, self.rule_3] # Orden importa
+        self.actions = [CarMovement.ACCELERATING, CarMovement.STOPPING, CarMovement.NONE] # Orden importa
 
         if self.id == 1:
             global tar_ref
@@ -114,10 +121,8 @@ class CuboAgentVelocity(ap.Agent):
             self.g_cubo = Car.Car(self.Position,scale=5, id=self.id)
             
         self.g_cubo.draw(self.Position, direction=self.Direction)
-
+    
     def step(self):
-        perception = self.perceive_environment()
-        
         if DEBUG['movement']:
             print(f"\n=== Car {self.id} Movement State ===")
             print(f"Movement Type: {self.car_movement}")
@@ -125,19 +130,12 @@ class CuboAgentVelocity(ap.Agent):
             print(f"Current Speed: {round(self.vel, 2)}")
             print(f"Current Acceleration: {round(self.acc, 2)}")
         
-        if perception['lights'] and not self.last_seen_lights:
-            self.send_arrival_message()
-            
-        self.last_seen_lights = bool(perception['lights'])
+        self.see()
+        self.next()
+        self.action()
         
-        if self.car_movement == CarMovement.ACCELERATING:
-            self.control_jerk(self.jerk_delta)
-        elif self.car_movement == CarMovement.STOPPING:
-            self.control_jerk(-self.jerk_delta)
-        
-        self.update_velocity()
-
-        # No colisión por ahora, solo limites del mapa
+        # ENSURING AGENT POSITION
+        # TODO: Colission detection
         new_pos = np.array(self.Position) + self.delta_pos 
         if abs(new_pos[0]) > self.DimBoard or abs(new_pos[2]) > self.DimBoard:
             self.reset_position()
@@ -147,6 +145,57 @@ class CuboAgentVelocity(ap.Agent):
 
     def update(self):
         self.g_cubo.draw(self.Position, direction=self.Direction)
+    
+    '''
+    Deductive reasoning functions
+    '''
+    def see(self):
+        self.perception = self.perceive_environment()
+        if self.perception['lights']:
+            self.nearest_light = min(self.perception['lights'], 
+                                key=lambda x: np.linalg.norm(np.array(x['position']) - np.array(self.Position)))
+        else: 
+            self.nearest_light = None
+    
+    def next(self):
+        for action in self.actions:
+            for rule in self.rules:
+                if rule(action):
+                    self.intention = action
+                    if DEBUG['move_decision'] and self.intention != CarMovement.NONE:
+                        print("car", self.id, "decided to", self.intention)
+                    return
+    
+    def action(self):
+        # COMUNICATION
+        if self.perception['lights'] and not self.last_seen_lights:
+            self.send_arrival_message()
+            
+        self.last_seen_lights = bool(self.perception['lights'])
+        
+        # CAR MOVEMENT
+        # TODO: Confirm that its not already accelerating or stopped!
+        if self.intention == CarMovement.ACCELERATING:
+            self.start_movement(CarMovement.ACCELERATING)
+        elif self.intention == CarMovement.STOPPING:
+            self.start_movement(CarMovement.STOPPING)
+        
+        # Updating current accelerating or stopping process
+        if self.car_movement == CarMovement.ACCELERATING:
+            self.control_jerk(self.jerk_delta)
+        elif self.car_movement == CarMovement.STOPPING:
+            self.control_jerk(-self.jerk_delta)
+            
+        self.update_velocity()
+    
+    def rule_1(self, action):
+        return bool(self.nearest_light and action == CarMovement.ACCELERATING and self.nearest_light['state'] == 'Green')
+
+    def rule_2(self, action):
+        return bool(self.nearest_light and action == CarMovement.STOPPING and self.nearest_light['state'] == 'Red')
+    
+    def rule_3(self, action):
+        return bool(action == CarMovement.NONE)
         
     '''
     Interaction, communication and perception
@@ -234,8 +283,8 @@ class CuboAgentVelocity(ap.Agent):
         if self.car_movement != CarMovement.NONE:
             return
         
-        if self.id == 2:
-            return
+        # if self.id == 2:
+        #     return
 
         self.car_movement = new_car_movement
     
@@ -281,18 +330,6 @@ class CuboAgentVelocity(ap.Agent):
         # print("acc", self.acc)
         # print("delta_pos", self.delta_pos)
         # print("---------")
-        
-    def update_velocity_considering_lights(self):
-        perception = self.perceive_environment()
-        
-        if perception['lights']:
-            nearest_light = min(perception['lights'], 
-                                key=lambda x: np.linalg.norm(np.array(x['position']) - np.array(self.Position)))
-            
-            if nearest_light['state'] == 'Red':
-                self.start_movement(CarMovement.STOPPING)
-            elif nearest_light['state'] == "Green":
-                self.start_movement(CarMovement.ACCELERATING)
     
     def reset_position(self):
         spawn = random.choice(list(self.model.spawn_points.values()))
