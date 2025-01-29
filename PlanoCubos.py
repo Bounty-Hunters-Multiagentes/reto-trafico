@@ -120,6 +120,15 @@ def Init():
     glClearColor(0,0,0,0)
     glEnable(GL_DEPTH_TEST)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+    
+    
+    glLightfv(GL_LIGHT0, GL_POSITION,  (0, 200, 0, 0.0))
+    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.5, 0.5, 0.5, 1.0))
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.5, 0.5, 0.5, 1.0))
+    glEnable(GL_LIGHTING)
+    glEnable(GL_LIGHT0)
+    glEnable(GL_COLOR_MATERIAL)
+    glShadeModel(GL_SMOOTH)           # most obj files expect to be smooth-shaded 
 
 def display(DimBoard):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

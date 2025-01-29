@@ -13,7 +13,6 @@ import numpy as np
 import random
 import math
 
-from constants import CAR_PATH
 from objloader import OBJ
 
 

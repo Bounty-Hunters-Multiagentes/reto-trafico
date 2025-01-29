@@ -329,7 +329,7 @@ class CuboModel(ap.Model):
 
 
 parameters = {
-   'cubos' : 2,
+   'cubos' : 7,
    'dim' : 200,
    'vel' : 2.0,
    'Scale' : 5.0,

@@ -13,7 +13,7 @@ import numpy as np
 import random
 import math
 
-from constants import CAR_PATH
+from constants import ALL_CAR_PATHS
 from objloader import OBJ
 
 
@@ -22,7 +22,9 @@ class Car:
     def __init__(self, init_pos=(0,0,0), scale=1, id=-1):
         self.points = np.array([[-1.0,-1.0, 1.0], [1.0,-1.0, 1.0], [1.0,-1.0,-1.0], [-1.0,-1.0,-1.0],
                                 [-1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0,-1.0], [-1.0, 1.0,-1.0]])
-        self.mustang = OBJ(CAR_PATH, swapyz=True)
+        
+        car_path = np.random.choice(ALL_CAR_PATHS)
+        self.mustang = OBJ(car_path, swapyz=True)
         self.mustang.generate()
         self.Position = list(init_pos)
         self.scale = scale
