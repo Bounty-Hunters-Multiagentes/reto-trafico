@@ -65,7 +65,7 @@ class CuboAgentVelocity(ap.Agent):
         self.jerk_time_wait = 0.1 # How much time to have jerk at 0
         self.jerk_state = JerkState.NONE # State of accelerating of deaccelerating
         self.state_timer = 0 # Timer to know when to change states
-        self.car_movement = CarMovement.NONE # Whether accelerating, stopping, or none. MANUAL CHANGES ONLY
+        self.car_movement = CarMovement.ACCELERATING # Whether accelerating, stopping, or none.
         self.last_seen_lights = False
         
         self.lane = self.model.nprandom.choice(list(lane_map.values()))     
@@ -338,6 +338,7 @@ class CuboAgentVelocity(ap.Agent):
         self.Direction = np.array(spawn['direction'], dtype=np.float64)
         self.acc = 0
         self.vel = 0
+        self.start_movement(CarMovement.ACCELERATING)
 
 class CuboModel(ap.Model):
 
