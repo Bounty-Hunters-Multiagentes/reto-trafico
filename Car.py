@@ -44,7 +44,7 @@ class Car:
         glPushMatrix()
         glTranslatef(*self.light_offset)
         glScaled(self.light_scale,self.light_scale,self.light_scale)
-        self.car_light.draw()
+        # self.car_light.draw()
         
         glPopMatrix()
         

@@ -13,6 +13,8 @@ from constants import DEBUG
 import numpy as np
 
 from Lane import lane_map
+from Decoration import Decoration
+
 
 class Direction(Enum):
     UP = 1
@@ -312,11 +314,23 @@ class CuboModel(ap.Model):
             semaforo.setup_semaforo(semaforo_info[i])
             semaforo.setup_color_time(300, 100) # la cantidad de pasos que va a estar prendida la luz verde y la amarilla antes de cambiar de semaforo
         
+        global decorations
+        decorations = [
+            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(200,50,140), scale=0.2, rotation=[-90, 0, 0]),
+            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(140,50,200), scale=0.2, rotation=[-90, 0, 90]),
+            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(20,50, 200), scale=0.2, rotation=[-90, 0, -90]),
+
+            Decoration("Assets/tree_2.obj", init_pos=(200,10,200), scale=0.1, rotation=[0, 0, 0])
+        ]
         self.collisions = 0
 
     def step(self):
         self.semaforos.step()
         self.cubos.step()
+        
+        global decorations
+        for decoration in decorations:
+            decoration.draw()
 
     def update(self):
         self.semaforos.update()
@@ -391,6 +405,6 @@ pygame.quit()
 
 print(model.output.info)
 model.output.variables.CuboModel.plot()
-plt.show()
+# plt.show()
 
 
