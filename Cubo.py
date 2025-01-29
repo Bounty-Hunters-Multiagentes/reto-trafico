@@ -61,7 +61,7 @@ class Cubo:
         glVertex3fv(self.points[7])
         glEnd()
     
-    def draw(self, Position, scale=5):
+    def draw(self, Position, scale=5, direction=[0,0,0]):
         glPushMatrix()
         glTranslatef(Position[0], Position[1], Position[2])
         

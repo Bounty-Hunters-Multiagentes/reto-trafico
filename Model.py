@@ -110,7 +110,7 @@ class CuboAgentVelocity(ap.Agent):
         else:
             self.g_cubo = Car.Car(self.Position,scale=5, id=self.id)
             
-        self.g_cubo.draw(self.Position)
+        self.g_cubo.draw(self.Position, direction=self.Direction)
 
     def step(self):
         perception = self.perceive_environment()
@@ -143,7 +143,7 @@ class CuboAgentVelocity(ap.Agent):
             self.Position[2] = new_pos[2]
 
     def update(self):
-        self.g_cubo.draw(self.Position)
+        self.g_cubo.draw(self.Position, direction=self.Direction)
         
     '''
     Interaction, communication and perception

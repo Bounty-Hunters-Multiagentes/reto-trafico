@@ -16,6 +16,14 @@ import math
 from constants import ALL_CAR_PATHS
 from objloader import OBJ
 
+def get_rotation_from_direction(direction):
+    x, y, z = direction
+
+    yaw = math.degrees(math.atan2(x, z))
+    # pitch = math.degrees(-math.asin(y))  
+    # roll = 0  
+
+    return yaw
 
 class Car:
     
@@ -34,17 +42,20 @@ class Car:
         self.id = id
         self.rotation = 0
     
-    def draw(self, Position):
+    def draw(self, Position, direction):
         self.Position = Position
+        self.rotation = get_rotation_from_direction(direction)
         glPushMatrix()
         glTranslatef(Position[0], Position[1], Position[2])
+        glRotatef(self.rotation, 0, 1, 0)  # Rota en el eje Y
+
         glColor3f(1.0, 1.0, 1.0)
         glScaled(self.scale,self.scale,self.scale)
         
         glPushMatrix()
         glTranslatef(*self.light_offset)
         glScaled(self.light_scale,self.light_scale,self.light_scale)
-        # self.car_light.draw()
+        self.car_light.draw()
         
         glPopMatrix()
         
@@ -131,9 +142,7 @@ class Frustum:
 
     def is_point_inside_frustum(self, point):
         px, py, pz = point
-        
-        print("point:", point)
-        
+                
         car_position = self.car_reference.Position
         car_rotation = self.car_reference.rotation
 
@@ -142,9 +151,9 @@ class Frustum:
         sin_theta = math.sin(rotation_rad)
 
         # trasnformar considerando la posicion del carro
-        px -= car_position[0] + self.car_offset[0]
-        py -= car_position[1] + self.car_offset[1]
-        pz -= car_position[2] + self.car_offset[2]
+        px -= car_position[0] - self.car_offset[0]
+        py -= car_position[1] - self.car_offset[1]
+        pz -= car_position[2] - self.car_offset[2]
 
         # Rotar Y-axis
         px_rot = px * cos_theta - pz * sin_theta
