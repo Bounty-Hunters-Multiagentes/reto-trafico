@@ -65,7 +65,7 @@ class CuboAgentVelocity(ap.Agent):
         self.car_movement = CarMovement.NONE # Whether accelerating, stopping, or none
         self.last_seen_lights = False
         
-        self.lane = lane_map["Left"] # self.model.nprandom.choice(list(lane_map.values()))        
+        self.lane = self.model.nprandom.choice(list(lane_map.values()))        
         
         self.scale = self.model.p.Scale
         self.radio = math.sqrt(self.scale*self.scale + self.scale*self.scale)
@@ -73,15 +73,15 @@ class CuboAgentVelocity(ap.Agent):
         
         # Se inicializa una posicion aleatoria en el tablero
         self.Position = []
-        # self.Position.append(self.model.random.uniform(self.lane.min_x, self.lane.max_x))
+        self.Position.append(self.model.random.uniform(self.lane.min_x, self.lane.max_x))
         # self.Position.append(self.lane.max_x)
-        self.Position.append((self.lane.max_x + self.lane.min_x) / 2)
+        # self.Position.append((self.lane.max_x + self.lane.min_x) / 2)
 
 
         self.Position.append(self.scale)
-        # self.Position.append(self.model.random.randint(self.lane.min_z, self.lane.max_z))
+        self.Position.append(self.model.random.randint(self.lane.min_z, self.lane.max_z))
         # self.Position.append((self.lane.max_z + self.lane.min_z) / 2)
-        self.Position.append(self.lane.min_z)
+        # self.Position.append(self.lane.min_z)
 
         # Se inicializa un vector de direccion aleatorio
         self.Direction = self.lane.direction
