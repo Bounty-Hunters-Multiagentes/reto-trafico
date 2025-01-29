@@ -1,36 +1,25 @@
-#Autor: Ivan Olmos Pineda
+import math
 
-
-import pygame
-from pygame.locals import *
+import numpy as np
 
 # Cargamos las bibliotecas de OpenGL
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-
-import numpy as np
-import random
-import math
+from pygame.locals import *
 
 from constants import ALL_CAR_PATHS
 from objloader import OBJ
 
+
 def get_rotation_from_direction(direction):
     x, y, z = direction
-
     yaw = math.degrees(math.atan2(x, z))
-    # pitch = math.degrees(-math.asin(y))  
-    # roll = 0  
-
     return yaw
 
+
 class Car:
-    
-    def __init__(self, init_pos=(0,0,0), scale=1, id=-1):
-        self.points = np.array([[-1.0,-1.0, 1.0], [1.0,-1.0, 1.0], [1.0,-1.0,-1.0], [-1.0,-1.0,-1.0],
-                                [-1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0,-1.0], [-1.0, 1.0,-1.0]])
-        
+    def __init__(self, init_pos=(0, 0, 0), scale=1, id=-1):
         car_path = np.random.choice(ALL_CAR_PATHS)
         self.mustang = OBJ(car_path, swapyz=True)
         self.mustang.generate()
@@ -38,10 +27,18 @@ class Car:
         self.scale = scale
         self.light_scale = 1
         self.light_offset = [0, 0, 0]
-        self.car_light = Frustum(0.3, 3, 10, 32, car_reference=self, scale=scale * self.light_scale, car_offset=self.light_offset)
+        self.car_light = Frustum(
+            0.3,
+            3,
+            10,
+            32,
+            car_reference=self,
+            scale=scale * self.light_scale,
+            car_offset=self.light_offset,
+        )
         self.id = id
         self.rotation = 0
-    
+
     def draw(self, Position, direction):
         self.Position = Position
         self.rotation = get_rotation_from_direction(direction)
@@ -50,31 +47,36 @@ class Car:
         glRotatef(self.rotation, 0, 1, 0)  # Rota en el eje Y
 
         glColor3f(1.0, 1.0, 1.0)
-        glScaled(self.scale,self.scale,self.scale)
-        
+        glScaled(self.scale, self.scale, self.scale)
+
         glPushMatrix()
         glTranslatef(*self.light_offset)
-        glScaled(self.light_scale,self.light_scale,self.light_scale)
+        glScaled(self.light_scale, self.light_scale, self.light_scale)
         self.car_light.draw()
-        
+
         glPopMatrix()
-        
+
         glRotatef(-90, 1, 0, 0)
         self.mustang.render()
-        
+
         glPopMatrix()
-    
+
     def perceive_objects(self, objects):
         objects_perceived = []
         for object in objects:
-            if self.id != object.id and self.car_light.is_point_inside_frustum(object.Position):
+            if self.id != object.id and self.car_light.is_point_inside_frustum(
+                object.Position
+            ):
                 # print(object.Position)
                 # print(f"Object {object.id} is inside the frustum")
                 objects_perceived.append(object)
-                
+
         return objects_perceived
 
+
 """ Used for the car light"""
+
+
 class Frustum:
     def __init__(self, R, r, h, n, car_reference, scale, car_offset):
         self.R = R  # Radius of the larger base
@@ -91,14 +93,14 @@ class Frustum:
         vertices = []
         angle_step = 2 * math.pi / n
 
-        vertices.append((0.0, 0.0, 0.0))  
+        vertices.append((0.0, 0.0, 0.0))
         for i in range(n):
             angle = i * angle_step
             x = R * math.cos(angle)
             y = R * math.sin(angle)
             vertices.append((x, y, 0.0))
 
-        vertices.append((0.0, 0.0, h))  
+        vertices.append((0.0, 0.0, h))
         for i in range(n):
             angle = i * angle_step
             x = r * math.cos(angle)
@@ -110,31 +112,31 @@ class Frustum:
     def draw(self):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        
+
         glPushMatrix()
         glColor4f(1.0, 1.0, 1.0, 0.5)
 
         # base larga
         glBegin(GL_TRIANGLE_FAN)
-        glVertex3f(*self.vertices[0])  
+        glVertex3f(*self.vertices[0])
         for i in range(1, self.n + 1):
             glVertex3f(*self.vertices[i])
-        glVertex3f(*self.vertices[1])  
+        glVertex3f(*self.vertices[1])
         glEnd()
 
         # base pequeña
         glBegin(GL_TRIANGLE_FAN)
-        glVertex3f(*self.vertices[self.n + 1]) 
+        glVertex3f(*self.vertices[self.n + 1])
         for i in range(self.n + 2, 2 * self.n + 2):
             glVertex3f(*self.vertices[i])
-        glVertex3f(*self.vertices[self.n + 2]) 
+        glVertex3f(*self.vertices[self.n + 2])
         glEnd()
 
         glBegin(GL_QUAD_STRIP)
         for i in range(1, self.n + 1):
-            glVertex3f(*self.vertices[i]) 
-            glVertex3f(*self.vertices[self.n + 1 + i])  
-        glVertex3f(*self.vertices[1])  
+            glVertex3f(*self.vertices[i])
+            glVertex3f(*self.vertices[self.n + 1 + i])
+        glVertex3f(*self.vertices[1])
         glVertex3f(*self.vertices[self.n + 2])
         glEnd()
 
@@ -142,7 +144,7 @@ class Frustum:
 
     def is_point_inside_frustum(self, point):
         px, py, pz = point
-                
+
         car_position = self.car_reference.Position
         car_rotation = self.car_reference.rotation
 
@@ -160,10 +162,10 @@ class Frustum:
         pz_rot = px * sin_theta + pz * cos_theta
 
         # considerar scaling
-        scaled_R = self.R * self.scale 
-        scaled_r = self.r * self.scale  
-        scaled_h = self.h * self.scale 
-        
+        scaled_R = self.R * self.scale
+        scaled_r = self.r * self.scale
+        scaled_h = self.h * self.scale
+
         if pz_rot < 0 or pz_rot > scaled_h:
             return False
 
