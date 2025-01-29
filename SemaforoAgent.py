@@ -24,6 +24,15 @@ class SemaforoAgent(ap.Agent):
         
     def setup_direction(self, direction):
         self.direction = direction
+        # Si somos el primer semaforo se manda el mensaje de que inicialmente todos estamos en rojo
+        for other_light in self.model.semaforos:
+            if True: # lo vamos a dejar asi por ahora (deberia funcionar igual)
+                 Message(
+                    sender= None,
+                    receiver=other_light.direction,
+                    performative="red_finished",
+                    content={"time": 0}
+                ).send()
         
     def setup_semaforo(self, semaforoInfo):
         self.semaforo = Semaforo(semaforoInfo['init_pos'], semaforoInfo['rotation'])
@@ -37,38 +46,48 @@ class SemaforoAgent(ap.Agent):
         """
         Process incoming messages from cars or other traffic lights.
         """
+        red_finished_msgs = []
+        car_arrival_msgs = []
+        first_car_arrival_msgs = []
+
+        # Separate messages into categories before processing
+        for msg in list(Message.environment_buffer):  # Use list() to avoid modifying while iterating
+            if msg.receiver == self.direction:
+                if msg.performative == "red_finished":
+                    red_finished_msgs.append(msg)
+                elif msg.performative == "car_arrival":
+                    car_arrival_msgs.append(msg)
+            if msg.performative == "send_first_car_arrival":
+                first_car_arrival_msgs.append(msg)
+
         # Process red_finished messages first
-        for msg in Message.environment_buffer:
-            if msg.receiver == self.direction and msg.performative == "red_finished":
-                # Create an array of pairs (arrival_time, direction) from the first_car_arrivals dictionary
-                arrival_times = [(time, dir) for dir, time in self.first_car_arrivals.items()]
-                # Sort the array first by arrival_time, then by direction
-                arrival_times.sort()
-                
-                # print("these were the arrival times: ")
-                # print(arrival_times)
-                
-                # Check if the current direction has the earliest arrival time
-                if (self.first_car_arrival, self.direction) == arrival_times[0]:
-                    self.intention = "Green"  # Set intention to Green
+        for msg in red_finished_msgs:
+            arrival_times = [(time, dir) for dir, time in self.first_car_arrivals.items()]
+            arrival_times.sort()  # Sort by earliest arrival time
 
-                # Reset the first_car_arrivals dictionary after processing red_finished messages
-                self.first_car_arrivals = { "up": 99999999, "down": 99999999, "left": 99999999, "right": 99999999 }
+            # print("these were the arrival times: ", self.direction, self.first_car_arrival)
+            # print(arrival_times)
 
-                Message.environment_buffer.remove(msg)
+            if (arrival_times[0][0], self.direction) == arrival_times[0]:
+                self.intention = "Green"
+
+            # Reset the first_car_arrivals dictionary after processing red_finished messages
+            self.first_car_arrivals = { "up": 99999999, "down": 99999999, "left": 99999999, "right": 99999999 }
+            self.first_car_arrival = 99999999
+            # Do NOT reset first_car_arrivals immediately—wait until all messages are processed
+            Message.environment_buffer.remove(msg)
 
         # Process car arrival messages
-        for msg in Message.environment_buffer:
-            if msg.receiver == self.direction and msg.performative == "car_arrival":
-                self.first_car_arrival = min(msg.content["time"], self.first_car_arrival)
-                Message.environment_buffer.remove(msg)
+        for msg in car_arrival_msgs:
+            self.first_car_arrival = min(msg.content["time"], self.first_car_arrival)
+            Message.environment_buffer.remove(msg)
 
         # Process send_first_car_arrival messages from other lights
-        for msg in Message.environment_buffer:
-            if msg.performative == "send_first_car_arrival":
-                # Update the first_car_arrivals dictionary with the received information
-                self.first_car_arrivals[msg.content["direction"]] = min(self.first_car_arrivals[msg.content["direction"]], msg.content["time"])
-                Message.environment_buffer.remove(msg)
+        for msg in first_car_arrival_msgs:
+            self.first_car_arrivals[msg.content["direction"]] = msg.content["time"]
+            if msg.sender == self.direction:
+                    Message.environment_buffer.remove(msg)
+
 
     def see(self):
         """
@@ -101,9 +120,9 @@ class SemaforoAgent(ap.Agent):
         """
         if self.intention:
             if self.state == "Yellow" and self.intention == "Red":
-                
-                # print("Became Red")
-                
+                # print()
+                # print()
+                # print("Became Red", self.direction, self.model.t)
                 # Notify other traffic lights when switching to Red
                 for other_light in self.model.semaforos:
                     if other_light.direction != self.direction or True: # lo vamos a dejar asi por ahora (deberia funcionar igual)
@@ -113,18 +132,22 @@ class SemaforoAgent(ap.Agent):
                             performative="red_finished",
                             content={"time": self.first_car_arrival}
                         ).send()
-
-            # After updating the first_car_arrival, send the update to all other traffic lights
-            Message(
-                sender=self.direction,
-                receiver="all",  # Broadcast to all lights
-                performative="send_first_car_arrival",
-                content={"direction": self.direction, "time": self.first_car_arrival}
-            ).send()
-
+                        
+                self.first_car_arrival = 99999999
             # Update the state
             self.state = self.intention
             self.intention = None  # Reset intention after applying it
+            
+        # After updating the first_car_arrival, send the update to all other traffic lights
+        # print("sending message")
+        
+        # print(self.direction, self.first_car_arrivals, self.first_car_arrival, self.model.t)
+        Message(
+            sender=self.direction,
+            receiver="all",  # Broadcast to all lights
+            performative="send_first_car_arrival",
+            content={"direction": self.direction, "time": self.first_car_arrival}
+        ).send()
 
         # Print current state
         
