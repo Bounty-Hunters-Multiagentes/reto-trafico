@@ -29,7 +29,7 @@ class Car:
         self.light_offset = [0, 0, 4]
         self.car_light = Frustum(
             0.3,
-            5,
+            8,
             10,
             32,
             car_reference=self,
