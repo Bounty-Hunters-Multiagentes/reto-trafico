@@ -15,7 +15,6 @@ from Lane import get_start_position, lane_map, lanes
 from Message import Message
 from SemaforoAgent import SemaforoAgent
 from Building import Building
-import random
 
 class Direction(Enum):
     UP = 1
@@ -500,11 +499,11 @@ class CuboModel(ap.Model):
         self.collisions = 0
 
     def spawn_new_car(self):
-        spawn_lane = random.choice(lanes)  # Select a random spawn location
+        spawn_lane = np.random.choice(lanes)  # Select a random spawn location
         
         # Create a new car of a random type
         car_types = [CuboAgentVelocity, GrandmaDrivingAgent, WannabeRacerAgent, LawAbidingAgent]
-        new_car_type = random.choice(car_types)
+        new_car_type = np.random.choice(car_types)
         new_car = new_car_type(self)
         
         # Set its lane
@@ -536,9 +535,6 @@ class CuboModel(ap.Model):
             for agent in self.cubos:
                 print(f"Car {agent.id} is in lane {agent.lane.name}")
         
-        # import sys
-        # sys.exit()
-        
         # Contar carros por carril
         vehicles_per_lane = {lane.name: 0 for lane in lanes}
         for agent in self.cubos:
@@ -547,18 +543,8 @@ class CuboModel(ap.Model):
         for lane_name, count in vehicles_per_lane.items():
             self.record(f"Carros en carril {lane_name}", count)
         
-        global decorations
-        for decoration in decorations:
-            decoration.draw()
-        
-            
-        if random.random() < 0.10:
+        if np.random.random() < 0.10:
             self.spawn_new_car()
-
-
-        global edificios
-        for edificio in edificios:
-            edificio.draw()
 
     def update(self):
         # print("entered", len(self.cubos), self.t)
@@ -567,9 +553,13 @@ class CuboModel(ap.Model):
         self.record('Cantidad de colisiones', self.collisions)
         self.collisions = 0
         
-        global decorations
+        # global decorations
         for decoration in decorations:
             decoration.draw()
+            
+        # global edificios
+        for edificio in edificios:
+            edificio.draw()
 
     def end(self):
         # Calcular velocidad promedio
@@ -675,4 +665,4 @@ plt.xticks(rotation=45, ha='right')
 plt.grid(axis='y', linestyle='--', alpha=0.7)
 
 plt.tight_layout()
-plt.show()
+# plt.show()
