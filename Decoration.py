@@ -17,6 +17,7 @@ class Decoration:
     
     def draw(self):        
         glPushMatrix()
+        glShadeModel(GL_SMOOTH)
         glTranslatef(self.Position[0], self.Position[1], self.Position[2])
         glRotatef(self.rotation[0], 1, 0, 0)  # Rota en el eje X
         glRotatef(self.rotation[1], 0, 1, 0)  # Rota en el eje Y
@@ -25,4 +26,5 @@ class Decoration:
 
         glScaled(self.scale, self.scale, self.scale)
         self.obj.render()
+        glShadeModel(GL_FLAT)
         glPopMatrix()

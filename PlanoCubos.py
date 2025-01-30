@@ -10,7 +10,7 @@ from pygame.image import load
 from PIL import Image
 
 from Semaforo import Semaforo
-
+from Decoration import Decoration
 
 # Se carga el archivo de la clase Cubo
 import sys
@@ -122,21 +122,30 @@ def Init():
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
     
     
-    glLightfv(GL_LIGHT0, GL_POSITION,  (0, 200, 0, 0.0))
-    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.5, 0.5, 0.5, 1.0))
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.5, 0.5, 0.5, 1.0))
+    glLightfv(GL_LIGHT0, GL_POSITION, (0, 200, 0, 0.0))
+    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.5, 0.5, 0.5, 1.0))  # Increased ambient light intensity
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.6, 0.6, 0.6, 1.0))  # Increased diffuse light intensity
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
     glEnable(GL_COLOR_MATERIAL)
-    glShadeModel(GL_SMOOTH)           # most obj files expect to be smooth-shaded 
+    glShadeModel(GL_SMOOTH)  # Smooth shading for most obj files
 
-def display(DimBoard):
+def display(DimBoard, decorations, cars):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     Axis()
     """
     for semaforo in semaforos:
         semaforo.draw(semaforo.Position, scale=10.5)
     """
+    
+    for decoration in decorations:
+        decoration.draw()
+    
+    """
+    for car in cars:
+        pass
+    """
+        # car.update()
     # Dibujamos el piso
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, floor_texture)

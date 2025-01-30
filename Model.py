@@ -16,6 +16,23 @@ from Message import Message
 from SemaforoAgent import SemaforoAgent
 
 
+import pygame
+from pygame.locals import *
+
+# Cargamos las bibliotecas de OpenGL
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from OpenGL.GLUT import *
+from pygame import image
+from pygame.image import load
+from PIL import Image
+
+from Semaforo import Semaforo
+
+
+# Se carga el archivo de la clase Cubo
+import sys
+
 class Direction(Enum):
     UP = 1
     LEFT = 2
@@ -424,8 +441,28 @@ class CuboModel(ap.Model):
             Decoration("Assets/tree_2.obj", init_pos=(0,50,200), scale=0.1, rotation=[-90, 0, 0]),
         ]
         self.collisions = 0
+    
+    def spawn_new_car(self):
+        spawn_locations = list(self.spawn_points.values())
+        spawn = random.choice(spawn_locations)  # Select a random spawn location
+        
+        # Create a new car of a random type
+        car_types = [CuboAgentVelocity, GrandmaDrivingAgent, WannabeRacerAgent, LawAbidingAgent]
+        new_car_type = random.choice(car_types)
+        new_car = new_car_type(self)
+        
+        # Set its position and direction
+        new_car.Position = list(spawn['pos'])
+        new_car.Direction = spawn['direction']
+        
+        # Add to the list of cars
+        self.cubos.append(new_car)
+
 
     def step(self):
+        if False:
+            self.spawn_new_car()
+            print("entered", len(self.cubos))
         self.semaforos.step()
         self.cubos.step()
         
@@ -493,14 +530,14 @@ while not done:
                 tar_ref.Position[2] += STEP
             
 
-    PlanoCubos.display(parameters['dim'])
+    PlanoCubos.display(parameters['dim'], decorations, model.cubos)
     
     if model.running:
         model.sim_step()
     
 
     pygame.display.flip()
-    pygame.time.wait(100)
+    pygame.time.wait(10)
 
 pygame.quit()
 
