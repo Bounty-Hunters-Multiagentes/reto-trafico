@@ -4,6 +4,7 @@ from enum import Enum
 import agentpy as ap
 import numpy as np
 import pygame
+import matplotlib.pyplot as plt
 
 import Car
 import Cubo
@@ -503,32 +504,30 @@ class CuboModel(ap.Model):
             edificio.draw()
 
     def update(self):
-            # print("entered", len(self.cubos), self.t)
+        # print("entered", len(self.cubos), self.t)
         self.semaforos.update()
         self.cubos.update()
-        self.record('Cantidad de colisiones', self.collisions)
-        self.collisions = 0
-
-    def end(self):
+        
         # Calcular velocidad promedio
         total_speeds = [agent.speed_log for agent in self.cubos]
         flattened_speeds = [speed for sublist in total_speeds for speed in sublist]
         avg_speed = sum(flattened_speeds) / len(flattened_speeds) if flattened_speeds else 0
-        self.record("Velocidad promedio", avg_speed)
+        self.report("Velocidad promedio (unidades / segundo)", avg_speed)
         
         # Calcular tiempo promedio detenido
         total_stopped_time = sum(agent.stopped_time for agent in self.cubos)
         avg_stopped_time = total_stopped_time / len(self.cubos) if self.cubos else 0
-        self.record("Tiempo promedio detenido", avg_stopped_time)
+        self.report("Tiempo promedio detenido (segundos)", avg_stopped_time)
         
         # Calcular tiempo promedio avanzando
         total_moving_time = sum(agent.moving_time for agent in self.cubos)
         avg_moving_time = total_moving_time / len(self.cubos) if self.cubos else 0
-        self.record("Tiempo promedio avanzando", avg_moving_time)
-        
-        # Registrar choques
-        self.record("Choques", self.collisions)
-        
+        self.report("Tiempo promedio avanzando (segundos)", avg_moving_time)
+    
+        # Cantidad de choques
+        self.record('Cantidad de colisiones', self.collisions)
+
+    def end(self):
         pass
 
 
@@ -594,7 +593,22 @@ while not done:
 pygame.quit()
 
 print(model.output.info)
+reporters = {key: value for key, value in model.reporters.items() if key != "seed"}
+
 model.output.variables.CuboModel.plot()
-# plt.show()
 
+plt.figure(figsize=(9, 8))
+plt.title("Metricas reportadas")
 
+metric_names = list(reporters.keys())
+metric_values = list(reporters.values())
+
+plt.bar(metric_names, metric_values, color='skyblue', edgecolor='black')
+
+plt.xlabel("Metricas")
+plt.ylabel("Valores")
+plt.xticks(rotation=45, ha='right') 
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+plt.tight_layout()
+plt.show()
