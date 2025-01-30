@@ -108,11 +108,23 @@ class CuboAgentVelocity(ap.Agent):
         else:
             self.g_cubo = Car.Car(self.Position,scale=5, id=self.id)
             
-       # self.g_cubo.draw(self.Position, direction=self.Direction)
+        # Metrics
+        self.speed_log = []
+        self.stopped_time = 0
+        self.moving_time = 0
+        self.stop_treshold = 0.1 # Cualquier velocidad menor o igual a esto se considera "parado", todo mayor se considera "moviendo"
+            
+    #    self.g_cubo.draw(self.Position, direction=self.Direction)
     
     def step(self):
         if not self.is_active:
             return
+        
+        self.speed_log.append(self.vel)
+        if self.vel <= self.stop_treshold:
+            self.stopped_time += time_per_step
+        else:
+            self.moving_time += time_per_step
         
         if DEBUG['movement']:
             print(f"\n=== Car {self.id} Movement State ===")
@@ -469,6 +481,14 @@ class CuboModel(ap.Model):
         # import sys
         # sys.exit()
         
+        # Contar carros por carril
+        vehicles_per_lane = {lane.name: 0 for lane in lanes}
+        for agent in self.cubos:
+            vehicles_per_lane[agent.lane.name] += 1
+            
+        for lane_name, count in vehicles_per_lane.items():
+            self.record(f"Carros en carril {lane_name}", count)
+        
         global decorations
         for decoration in decorations:
             decoration.draw()
@@ -490,6 +510,25 @@ class CuboModel(ap.Model):
         self.collisions = 0
 
     def end(self):
+        # Calcular velocidad promedio
+        total_speeds = [agent.speed_log for agent in self.cubos]
+        flattened_speeds = [speed for sublist in total_speeds for speed in sublist]
+        avg_speed = sum(flattened_speeds) / len(flattened_speeds) if flattened_speeds else 0
+        self.record("Velocidad promedio", avg_speed)
+        
+        # Calcular tiempo promedio detenido
+        total_stopped_time = sum(agent.stopped_time for agent in self.cubos)
+        avg_stopped_time = total_stopped_time / len(self.cubos) if self.cubos else 0
+        self.record("Tiempo promedio detenido", avg_stopped_time)
+        
+        # Calcular tiempo promedio avanzando
+        total_moving_time = sum(agent.moving_time for agent in self.cubos)
+        avg_moving_time = total_moving_time / len(self.cubos) if self.cubos else 0
+        self.record("Tiempo promedio avanzando", avg_moving_time)
+        
+        # Registrar choques
+        self.record("Choques", self.collisions)
+        
         pass
 
 
