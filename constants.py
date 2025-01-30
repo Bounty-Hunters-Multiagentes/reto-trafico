@@ -22,5 +22,6 @@ DEBUG = {
     'messages': True,
     'movement': False,
     'move_decision': False,
-    'cube': False,
+    'cube': True,
+    'lane': True,
 }
