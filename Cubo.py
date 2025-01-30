@@ -72,5 +72,5 @@ class Cubo:
         self.drawFaces()
         glPopMatrix()
         
-    
+
                 
