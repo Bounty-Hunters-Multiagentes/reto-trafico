@@ -456,7 +456,7 @@ class CuboModel(ap.Model):
         
         
         self.semaforos = ap.AgentList(self, 4, SemaforoAgent)
-        directions = ['up', 'down', 'left', 'rigth']
+        directions = ['up', 'down', 'left', 'right']
         offset = 35
         semaforo_info = [
             {'init_pos': (45, 10, 60), 'rotation': 180},  # For 'down'
