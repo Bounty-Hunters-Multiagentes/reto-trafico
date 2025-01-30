@@ -95,7 +95,7 @@ class CuboAgentVelocity(ap.Agent):
         self.rotation_per_step = 90
         self.update_rot_per_step()
         self.in_rotation = False
-        self.want_to_rotate = np.random.choice([True, False])
+        self.want_to_turn = np.random.choice([True, False])
         self.pending_deg_to_rotate = 0
 
         if self.id == 1 and DEBUG['cube']:
@@ -176,7 +176,7 @@ class CuboAgentVelocity(ap.Agent):
         else: 
             self.nearest_car = None  
     
-        if self.want_to_rotate:
+        if self.want_to_turn:
             dist = math.sqrt(self.Position[0]**2 + self.Position[2]**2)
             # Close to center 
             if dist < self.distance_to_turn:
@@ -232,7 +232,7 @@ class CuboAgentVelocity(ap.Agent):
             )
 
     def rule_2(self, action):
-        return bool(self.nearest_light and action == CarMovement.STOPPING and self.nearest_light['state'] == 'Red')
+        return bool(self.nearest_light and action == CarMovement.STOPPING and self.nearest_light['state'] == 'Red' and not self.want_to_turn)
     
     def rule_3(self, action):
         return bool(action == CarMovement.NONE)
@@ -418,7 +418,7 @@ class CuboAgentVelocity(ap.Agent):
 
         # TODO: Verify this is also changed on spawn
         self.ideal_direction = self.Direction
-        self.want_to_rotate = np.random.choice([True, False])
+        self.want_to_turn = np.random.choice([True, False])
         self.acc = 0
         self.vel = 0
         # self.start_movement(CarMovement.ACCELERATING)
@@ -459,8 +459,8 @@ class CuboModel(ap.Model):
         directions = ['up', 'down', 'left', 'rigth']
         offset = 35
         semaforo_info = [
-            {'init_pos': (45, 10, 60), 'rotation': 180},  # For 'up'
-            {'init_pos': (-45, 10, -60), 'rotation': 0},  # For 'down'
+            {'init_pos': (45, 10, 60), 'rotation': 180},  # For 'down'
+            {'init_pos': (-45, 10, -70), 'rotation': 0},  # For 'up'
             {'init_pos': (60, 10, -45), 'rotation': 270}, # For 'right'
             {'init_pos': (-60, 10, 45), 'rotation': 90},  # For 'left'
         ]
