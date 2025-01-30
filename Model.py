@@ -142,6 +142,9 @@ class CuboAgentVelocity(ap.Agent):
         if abs(new_pos[0]) > self.DimBoard or abs(new_pos[2]) > self.DimBoard:
             self.reset_position()
         else:
+            # Only turns if its moving 
+            if not self.equal_vectors(self.Position, new_pos):
+                self.update_direction()
             self.Position[0] = new_pos[0]
             self.Position[2] = new_pos[2]
 
@@ -217,7 +220,6 @@ class CuboAgentVelocity(ap.Agent):
             self.control_jerk(-self.jerk_delta)
             
         self.update_velocity()
-        self.update_direction()
     
     def rule_0(self, action):
         return bool(self.nearest_car and action == CarMovement.STOPPING and self.compute_distance(self.nearest_car) < self.brake_distance)
@@ -549,7 +551,7 @@ class CuboModel(ap.Model):
             decoration.draw()
         
             
-        if random.random() < 0.20:
+        if random.random() < 0.10:
             self.spawn_new_car()
 
 

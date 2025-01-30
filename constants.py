@@ -19,6 +19,8 @@ ALL_CAR_PATHS = [
     # CAR_PATH_CARTON_CAR,
 ]
 
+DRAW_CAR_LIGHT = False
+
 # Debug messages
 DEBUG = {
     'perception': False,

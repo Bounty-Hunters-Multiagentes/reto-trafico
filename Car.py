@@ -8,7 +8,10 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from pygame.locals import *
 
-from constants import ALL_CAR_PATHS
+from constants import (
+    ALL_CAR_PATHS,
+    DRAW_CAR_LIGHT
+)
 from objloader import OBJ
 
 
@@ -51,7 +54,8 @@ class Car:
         glTranslatef(*self.light_offset)
         glScaled(self.scale, self.scale, self.scale) # apply scale after translation
         glScaled(self.light_scale, self.light_scale, self.light_scale)
-        self.car_light.draw()
+        if DRAW_CAR_LIGHT:
+            self.car_light.draw()
 
         glPopMatrix()
         # apply scale for the car
