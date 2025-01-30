@@ -1,5 +1,4 @@
 import math
-import random
 from enum import Enum
 
 import agentpy as ap
@@ -11,11 +10,11 @@ import Cubo
 import PlanoCubos
 from constants import DEBUG
 from Decoration import Decoration
-from Lane import lane_map
+from Lane import get_start_position, lane_map, lanes
 from Message import Message
 from SemaforoAgent import SemaforoAgent
 from Building import Building
-
+import random
 
 class Direction(Enum):
     UP = 1
@@ -55,6 +54,9 @@ class CuboAgentVelocity(ap.Agent):
     Required agent functions
     '''
     def setup(self):
+        
+        self.is_active = True
+        
         self.vel = 0
         self.acc = 0
         self.jerk = 0
@@ -68,33 +70,17 @@ class CuboAgentVelocity(ap.Agent):
         self.car_movement = CarMovement.ACCELERATING # Whether accelerating, stopping, or none.
         self.last_seen_lights = False
         
-        self.brake_distance = 10
+        self.brake_distance = 50
         
-        self.lane = self.model.nprandom.choice(list(lane_map.values()))     
-        
-        self.Direction = np.array(self.lane.direction, dtype=np.float64)   
+        self.lane = self.model.nprandom.choice(list(lane_map.values()))
+        self.set_lane(self.lane)
         
         self.scale = self.model.p.Scale
         self.radio = math.sqrt(self.scale*self.scale + self.scale*self.scale)
         self.DimBoard = self.model.p.dim
         
         # Se inicializa una posicion aleatoria en el tablero
-        self.Position = []
-        self.Position.append(self.model.random.uniform(self.lane.min_x, self.lane.max_x))
-        # self.Position.append(self.lane.max_x)
-        # self.Position.append((self.lane.max_x + self.lane.min_x) / 2)
-
-
-        self.Position.append(self.scale)
-        self.Position.append(self.model.random.randint(self.lane.min_z, self.lane.max_z))
-        # self.Position.append((self.lane.max_z + self.lane.min_z) / 2)
-        # self.Position.append(self.lane.min_z)
-
-        # Se inicializa un vector de direccion aleatorio
-        self.Direction = self.lane.direction
-        # self.Direction.append(random.random())
-        # self.Direction.append(self.scale)
-        # self.Direction.append(random.random())
+        self.Position = [0, 0, 0]
         
         # Se normaliza el vector de direccion
         m = math.sqrt(self.Direction[0]*self.Direction[0] + self.Direction[2]*self.Direction[2])
@@ -113,9 +99,9 @@ class CuboAgentVelocity(ap.Agent):
         self.intention = CarMovement.NONE
         self.nearest_light = None
         self.rules = [self.rule_0, self.rule_1, self.rule_2, self.rule_3] # Orden importa
-        self.actions = [CarMovement.STOPPING, CarMovement.ACCELERATING, CarMovement.STOPPING, CarMovement.NONE] # Orden importa
+        self.actions = [CarMovement.STOPPING, CarMovement.ACCELERATING, CarMovement.NONE] # Orden importa
 
-        if self.id == 1:
+        if self.id == 1 and DEBUG['cube']:
             global tar_ref
             self.g_cubo = Cubo.Cubo(self.Position, scale=5)
             tar_ref = self
@@ -125,12 +111,18 @@ class CuboAgentVelocity(ap.Agent):
         self.g_cubo.draw(self.Position, direction=self.Direction)
     
     def step(self):
+        if not self.is_active:
+            return
+        
         if DEBUG['movement']:
             print(f"\n=== Car {self.id} Movement State ===")
             print(f"Movement Type: {self.car_movement}")
             print(f"Jerk State: {self.jerk_state}")
             print(f"Current Speed: {round(self.vel, 2)}")
             print(f"Current Acceleration: {round(self.acc, 2)}")
+        
+        if self.id == 1 and DEBUG['cube']:
+            return
         
         self.see()
         self.next()
@@ -147,6 +139,12 @@ class CuboAgentVelocity(ap.Agent):
 
     def update(self):
         self.g_cubo.draw(self.Position, direction=self.Direction)
+    
+    def set_lane(self, lane):
+        # print("Setting lane for agent", self.id, "to", lane.name)
+        self.lane = lane
+        self.Direction = np.array(self.lane.direction, dtype=np.float64)
+        self.Position = get_start_position(self.lane.name)
     
     '''
     Deductive reasoning functions
@@ -199,7 +197,11 @@ class CuboAgentVelocity(ap.Agent):
         return bool(self.nearest_car and action == CarMovement.STOPPING and self.compute_distance(self.nearest_car) < self.brake_distance)
 
     def rule_1(self, action):
-        return bool(self.nearest_light and action == CarMovement.ACCELERATING and self.nearest_light['state'] == 'Green')
+        return bool(
+            self.nearest_light and action == CarMovement.ACCELERATING and self.nearest_light['state'] == 'Green'
+            or 
+            not self.nearest_light and action == CarMovement.ACCELERATING
+            )
 
     def rule_2(self, action):
         return bool(self.nearest_light and action == CarMovement.STOPPING and self.nearest_light['state'] == 'Red')
@@ -223,7 +225,7 @@ class CuboAgentVelocity(ap.Agent):
     # Posible funcion para reemplazar objects_perceived
     def perceive_environment(self):
         # Handle test object
-        if self.id == 1:
+        if self.id == 1 and DEBUG['cube']:
             cars = []
             lights = []
         else:
@@ -266,9 +268,6 @@ class CuboAgentVelocity(ap.Agent):
     def compute_distance(self, car):
         if car is None:
             return 1e9
-        asd = np.linalg.norm(np.array(car.Position) - np.array(self.Position))
-        
-        print("DISTANCE ASDDASD: ", asd)
         return np.linalg.norm(np.array(car.Position) - np.array(self.Position))
     
     def send_arrival_message(self):
@@ -301,9 +300,6 @@ class CuboAgentVelocity(ap.Agent):
         
         if new_car_movement == CarMovement.ACCELERATING and self.vel > 0:
             return
-        
-        # if self.id == 2:
-        #     return
 
         self.car_movement = new_car_movement
     
@@ -351,12 +347,14 @@ class CuboAgentVelocity(ap.Agent):
         # print("---------")
     
     def reset_position(self):
-        spawn = random.choice(list(self.model.spawn_points.values()))
-        self.Position = list(spawn['pos'])
-        self.Direction = np.array(spawn['direction'], dtype=np.float64)
+        self.is_active = False
+        # self.set_lane(self.model.nprandom.choice(list(lane_map.values())))
+        # self.set_lane(self.lane)
+        self.Position = [1000, 1000, 1000] # sends to a position thats far away 
+
         self.acc = 0
         self.vel = 0
-        self.start_movement(CarMovement.ACCELERATING)
+        # self.start_movement(CarMovement.ACCELERATING)
 
         
 class GrandmaDrivingAgent(CuboAgentVelocity):
@@ -377,6 +375,15 @@ class LawAbidingAgent(CuboAgentVelocity):
 class CuboModel(ap.Model):
 
     def setup(self):
+        self.cartype1 = ap.AgentList(self, 1, CuboAgentVelocity)
+        self.cartype2 = ap.AgentList(self, 1, GrandmaDrivingAgent)
+        self.cartype3 = ap.AgentList(self, 1, WannabeRacerAgent)
+        self.cartype4 = ap.AgentList(self, 1, LawAbidingAgent)
+        
+        # Initialize agents
+        self.cubos = self.cartype1 + self.cartype2 + self.cartype3 + self.cartype4
+        
+        
         self.semaforos = ap.AgentList(self, 4, SemaforoAgent)
         directions = ['up', 'down', 'left', 'rigth']
         offset = 35
@@ -387,28 +394,17 @@ class CuboModel(ap.Model):
             {'init_pos': (-60, 10, 45), 'rotation': 90},  # For 'left'
         ]
         
-        self.spawn_points = {
-            'north': {'pos': (-offset, self.p.Scale, -self.p.dim), 'direction': [0.0, 0.0, 1.0]},
-            'south': {'pos': (offset, self.p.Scale, self.p.dim), 'direction': [0.0, 0.0, -1.0]},
-            'east': {'pos': (self.p.dim, self.p.Scale, -offset), 'direction': [-1.0, 0.0, 0.0]},
-            'west': {'pos': (-self.p.dim, self.p.Scale, offset), 'direction': [1.0, 0.0, 0.0]}
-        }
-        
-        self.cartype1 = ap.AgentList(self, 1, CuboAgentVelocity)
-        self.cartype2 = ap.AgentList(self, 1, GrandmaDrivingAgent)
-        self.cartype3 = ap.AgentList(self, 1, WannabeRacerAgent)
-        self.cartype4 = ap.AgentList(self, 1, LawAbidingAgent)
-        
-         # Initialize agents
-        self.cubos = self.cartype1 + self.cartype2 + self.cartype3 + self.cartype4
+        # self.spawn_points = {
+        #     'north': {'pos': (-offset, self.p.Scale, -self.p.dim), 'direction': [0.0, 0.0, 1.0]},
+        #     'south': {'pos': (offset, self.p.Scale, self.p.dim), 'direction': [0.0, 0.0, -1.0]},
+        #     'east': {'pos': (self.p.dim, self.p.Scale, -offset), 'direction': [-1.0, 0.0, 0.0]},
+        #     'west': {'pos': (-self.p.dim, self.p.Scale, offset), 'direction': [1.0, 0.0, 0.0]}
+        # }
         
         # Distribute cars evenly among spawn points
-        spawn_locations = list(self.spawn_points.values())
+        # spawn_locations = list(self.spawn_points.values())
         for i, agent in enumerate(self.cubos):
-            spawn = spawn_locations[i % len(spawn_locations)]
-            agent.Position = list(spawn['pos'])
-            agent.Direction = spawn['direction']
-        
+            agent.set_lane(lanes[i % len(lanes)])    
         
         for i, semaforo in enumerate(self.semaforos):
             semaforo.setup_direction(directions[i])
@@ -432,9 +428,44 @@ class CuboModel(ap.Model):
         ]
         self.collisions = 0
 
+    def spawn_new_car(self):
+        spawn_lane = random.choice(lanes)  # Select a random spawn location
+        
+        # Create a new car of a random type
+        car_types = [CuboAgentVelocity, GrandmaDrivingAgent, WannabeRacerAgent, LawAbidingAgent]
+        new_car_type = random.choice(car_types)
+        new_car = new_car_type(self)
+        
+        # Set its lane
+        new_car.set_lane(spawn_lane)
+        
+        # Check for collisions with existing cars
+        can_spawn = True
+        for agent in self.cubos:
+            d_x = new_car.Position[0] - agent.Position[0]
+            d_z = new_car.Position[2] - agent.Position[2]
+            d_c = math.sqrt(d_x * d_x + d_z * d_z)
+            if d_c - (new_car.radio + agent.radio) < 0.0:
+                can_spawn = False
+                break
+        
+        # Only add the car if there are no collisions
+        if can_spawn:
+            self.cubos.append(new_car)
+        else:
+            pass
+            # print("Collision detected. Car not spawned.", spawn_lane)
+        
     def step(self):
         self.semaforos.step()
         self.cubos.step()
+        
+        if DEBUG['lane']:
+            for agent in self.cubos:
+                print(f"Car {agent.id} is in lane {agent.lane.name}")
+        
+        # import sys
+        # sys.exit()
         
         global decorations
         for decoration in decorations:
@@ -446,6 +477,9 @@ class CuboModel(ap.Model):
             edificio.draw()
 
     def update(self):
+        if self.t % 30 == 0:
+            self.spawn_new_car()
+            # print("entered", len(self.cubos), self.t)
         self.semaforos.update()
         self.cubos.update()
         self.record('Cantidad de colisiones', self.collisions)
@@ -465,7 +499,7 @@ parameters = {
 
 model = CuboModel(parameters)
 
-STEP = 5
+STEP = 10
 
 done = False
 PlanoCubos.Init()
