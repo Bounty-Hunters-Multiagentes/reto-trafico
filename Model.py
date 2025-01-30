@@ -13,7 +13,7 @@ from Decoration import Decoration
 from Lane import get_start_position, lane_map, lanes
 from Message import Message
 from SemaforoAgent import SemaforoAgent
-
+import random
 
 class Direction(Enum):
     UP = 1
@@ -53,6 +53,9 @@ class CuboAgentVelocity(ap.Agent):
     Required agent functions
     '''
     def setup(self):
+        
+        self.is_active = True
+        
         self.vel = 0
         self.acc = 0
         self.jerk = 0
@@ -107,6 +110,9 @@ class CuboAgentVelocity(ap.Agent):
         self.g_cubo.draw(self.Position, direction=self.Direction)
     
     def step(self):
+        if not self.is_active:
+            return
+        
         if DEBUG['movement']:
             print(f"\n=== Car {self.id} Movement State ===")
             print(f"Movement Type: {self.car_movement}")
@@ -134,7 +140,7 @@ class CuboAgentVelocity(ap.Agent):
         self.g_cubo.draw(self.Position, direction=self.Direction)
     
     def set_lane(self, lane):
-        print("Setting lane for agent", self.id, "to", lane.name)
+        # print("Setting lane for agent", self.id, "to", lane.name)
         self.lane = lane
         self.Direction = np.array(self.lane.direction, dtype=np.float64)
         self.Position = get_start_position(self.lane.name)
@@ -340,12 +346,14 @@ class CuboAgentVelocity(ap.Agent):
         # print("---------")
     
     def reset_position(self):
+        self.is_active = False
         # self.set_lane(self.model.nprandom.choice(list(lane_map.values())))
-        self.set_lane(self.lane)
+        # self.set_lane(self.lane)
+        self.Position = [1000, 1000, 1000] # sends to a position thats far away 
 
         self.acc = 0
         self.vel = 0
-        self.start_movement(CarMovement.ACCELERATING)
+        # self.start_movement(CarMovement.ACCELERATING)
 
         
 class GrandmaDrivingAgent(CuboAgentVelocity):
@@ -414,6 +422,34 @@ class CuboModel(ap.Model):
         ]
         self.collisions = 0
 
+    def spawn_new_car(self):
+        spawn_lane = random.choice(lanes)  # Select a random spawn location
+        
+        # Create a new car of a random type
+        car_types = [CuboAgentVelocity, GrandmaDrivingAgent, WannabeRacerAgent, LawAbidingAgent]
+        new_car_type = random.choice(car_types)
+        new_car = new_car_type(self)
+        
+        # Set its lane
+        new_car.set_lane(spawn_lane)
+        
+        # Check for collisions with existing cars
+        can_spawn = True
+        for agent in self.cubos:
+            d_x = new_car.Position[0] - agent.Position[0]
+            d_z = new_car.Position[2] - agent.Position[2]
+            d_c = math.sqrt(d_x * d_x + d_z * d_z)
+            if d_c - (new_car.radio + agent.radio) < 0.0:
+                can_spawn = False
+                break
+        
+        # Only add the car if there are no collisions
+        if can_spawn:
+            self.cubos.append(new_car)
+        else:
+            pass
+            # print("Collision detected. Car not spawned.", spawn_lane)
+        
     def step(self):
         self.semaforos.step()
         self.cubos.step()
@@ -430,6 +466,9 @@ class CuboModel(ap.Model):
             decoration.draw()
 
     def update(self):
+        if self.t % 30 == 0:
+            self.spawn_new_car()
+            # print("entered", len(self.cubos), self.t)
         self.semaforos.update()
         self.cubos.update()
         self.record('Cantidad de colisiones', self.collisions)
