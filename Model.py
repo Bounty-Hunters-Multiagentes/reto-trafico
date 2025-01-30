@@ -272,7 +272,7 @@ class CuboAgentVelocity(ap.Agent):
         return np.linalg.norm(np.array(car.Position) - np.array(self.Position))
     
     def send_arrival_message(self):
-        if self.perception['lights'] and self.nearest_light and self.nearest_light['state'] == 'Red':
+        if self.perception['lights'] and self.nearest_light: # Antes pedia que estuviera en rojo pero creo que es mejor que siempre se pueda
             if DEBUG['messages']:
                 print(f"\n=== Car {self.id} Sending Message ===")
                 print(f"To Traffic Light: {self.nearest_light['light'].direction}")
@@ -446,7 +446,7 @@ class CuboModel(ap.Model):
             d_x = new_car.Position[0] - agent.Position[0]
             d_z = new_car.Position[2] - agent.Position[2]
             d_c = math.sqrt(d_x * d_x + d_z * d_z)
-            if d_c - (new_car.radio + agent.radio) < 0.0:
+            if d_c - (new_car.radio + agent.radio + 30) < 0.0:
                 can_spawn = False
                 break
         
@@ -474,7 +474,7 @@ class CuboModel(ap.Model):
             decoration.draw()
         
             
-        if random.random() < 0.05:
+        if random.random() < 0.20:
             self.spawn_new_car()
 
 
