@@ -14,6 +14,7 @@ from Decoration import Decoration
 from Lane import lane_map
 from Message import Message
 from SemaforoAgent import SemaforoAgent
+from Building import Building
 
 
 class Direction(Enum):
@@ -424,6 +425,11 @@ class CuboModel(ap.Model):
             Decoration("Assets/tree_2.obj", init_pos=(200,50,0), scale=0.1, rotation=[-90, 0, 0]),
             Decoration("Assets/tree_2.obj", init_pos=(0,50,200), scale=0.1, rotation=[-90, 0, 0]),
         ]
+        global edificios
+        edificios = [
+            Building(init_pos=(-60, 50, -120), texture_file='Assets/Building.jpg'),
+            Building(init_pos=(150, 50, -120), texture_file='Assets/Building.jpg')
+        ]
         self.collisions = 0
 
     def step(self):
@@ -433,6 +439,11 @@ class CuboModel(ap.Model):
         global decorations
         for decoration in decorations:
             decoration.draw()
+
+
+        global edificios
+        for edificio in edificios:
+            edificio.draw()
 
     def update(self):
         self.semaforos.update()
