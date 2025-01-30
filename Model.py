@@ -449,6 +449,7 @@ class CuboModel(ap.Model):
         self.cartype2 = ap.AgentList(self, 1, GrandmaDrivingAgent)
         self.cartype3 = ap.AgentList(self, 1, WannabeRacerAgent)
         self.cartype4 = ap.AgentList(self, 1, LawAbidingAgent)
+        self.car_types = [CuboAgentVelocity, GrandmaDrivingAgent, WannabeRacerAgent, LawAbidingAgent]
         
         # Initialize agents
         self.cubos = self.cartype1 + self.cartype2 + self.cartype3 + self.cartype4
@@ -502,8 +503,7 @@ class CuboModel(ap.Model):
         spawn_lane = np.random.choice(lanes)  # Select a random spawn location
         
         # Create a new car of a random type
-        car_types = [CuboAgentVelocity, GrandmaDrivingAgent, WannabeRacerAgent, LawAbidingAgent]
-        new_car_type = np.random.choice(car_types)
+        new_car_type = np.random.choice(self.car_types)
         new_car = new_car_type(self)
         
         # Set its lane
