@@ -15,7 +15,6 @@ from Lane import lane_map
 from Message import Message
 from SemaforoAgent import SemaforoAgent
 
-
 class Direction(Enum):
     UP = 1
     LEFT = 2
@@ -36,18 +35,6 @@ class CarMovement(Enum):
 time_per_step = 0.1
 tar_ref = None
 
-
-"""
-    Fast accelerating agent
-self.jerk_delta = 100 # How much jerk to increase or decrease when accelerating or stopping
-self.jerk_time_acc = 0.3 # How much time to have jerk positive 
-self.jerk_time_wait = 0.4 # How much time to have jerk at 0
-
-    Normal speed agent
-self.jerk_delta = 10 # How much jerk to increase or decrease when accelerating or stopping
-self.jerk_time_acc = 0.5 # How much time to have jerk positive 
-self.jerk_time_wait = 0.5 # How much time to have jerk at 0
-"""
 class CuboAgentVelocity(ap.Agent):
     
     '''
@@ -113,6 +100,15 @@ class CuboAgentVelocity(ap.Agent):
         self.nearest_light = None
         self.rules = [self.rule_0, self.rule_1, self.rule_2, self.rule_3] # Orden importa
         self.actions = [CarMovement.STOPPING, CarMovement.ACCELERATING, CarMovement.NONE] # Orden importa
+        
+        # Variables para girar
+        self.distance_to_turn = 80
+        self.ideal_direction = self.Direction
+        self.rotation_per_step = 90
+        self.update_rot_per_step()
+        self.in_rotation = False
+        self.want_to_rotate = np.random.choice([True, False])
+        self.pending_deg_to_rotate = 0
 
         if self.id == 1 and DEBUG['cube']:
             global tar_ref
@@ -136,7 +132,6 @@ class CuboAgentVelocity(ap.Agent):
         self.action()
         
         # ENSURING AGENT POSITION
-        # TODO: Colission detection
         new_pos = np.array(self.Position) + self.delta_pos 
         if abs(new_pos[0]) > self.DimBoard or abs(new_pos[2]) > self.DimBoard:
             self.reset_position()
@@ -162,7 +157,22 @@ class CuboAgentVelocity(ap.Agent):
             self.nearest_car = min(self.perception['cars'], 
                                 key=lambda x: np.linalg.norm(np.array(x.Position) - np.array(self.Position)))
         else: 
-            self.nearest_car = None
+            self.nearest_car = None  
+    
+        if self.want_to_rotate:
+            dist = math.sqrt(self.Position[0]**2 + self.Position[2]**2)
+            # Close to center 
+            if dist < self.distance_to_turn:
+                if not self.in_rotation:
+                    self.ideal_direction = self.rotate_vector(self.Direction, 90)   
+                    self.pending_deg_to_rotate = 90
+                    # print("old direction = ", self.Direction)
+                    # print("new direction = ", self.ideal_direction)
+                    # print("----")
+                self.in_rotation = True # While in the rotation range, do not trigger it again 
+            else:
+                self.in_rotation = False
+                # print("dist", dist)
     
     def next(self):
         for action in self.actions:
@@ -193,6 +203,7 @@ class CuboAgentVelocity(ap.Agent):
             self.control_jerk(-self.jerk_delta)
             
         self.update_velocity()
+        self.update_direction()
     
     def rule_0(self, action):
         return bool(self.nearest_car and action == CarMovement.STOPPING and self.compute_distance(self.nearest_car) < self.brake_distance)
@@ -342,11 +353,49 @@ class CuboAgentVelocity(ap.Agent):
         # print("acc", self.acc)
         # print("delta_pos", self.delta_pos)
         # print("---------")
+        
+    def update_direction(self): 
+        if self.pending_deg_to_rotate < self.rotation_per_step:
+            self.Direction = self.rotate_vector(self.Direction, self.pending_deg_to_rotate)
+            self.pending_deg_to_rotate = 0
+        else:
+            self.Direction = self.rotate_vector(self.Direction, self.rotation_per_step)
+            self.pending_deg_to_rotate -= self.rotation_per_step
     
+    # Assumes degrees are clockwise
+    def rotate_vector(self, vec, degrees):
+        new_vec = np.array(vec)
+        rad = np.radians(-degrees)
+        x, y, z = vec
+        new_vec[0] = z * np.sin(rad) + x * np.cos(rad)
+        new_vec[2] = z * np.cos(rad) - x * np.sin(rad)     
+        return new_vec
+    
+    # TODO: delete if unused later
+    def equal_vectors(self, v1, v2):
+        if len(v1) != len(v2):
+            return False
+
+        for i in range(len(v1)):
+            if abs(v1[i] - v2[i]) > 1e-5:
+                return False
+        return True
+    
+    def update_rot_per_step(self):
+        # Que min sea 5, max 90
+        rot = min(
+            max(0.105 * self.jerk_delta - 3, 5), 
+            90
+        )
+        
+        self.rotation_per_step = rot
+         
     def reset_position(self):
         spawn = random.choice(list(self.model.spawn_points.values()))
         self.Position = list(spawn['pos'])
         self.Direction = np.array(spawn['direction'], dtype=np.float64)
+        self.ideal_direction = self.Direction
+        self.want_to_rotate = np.random.choice([True, False])
         self.acc = 0
         self.vel = 0
         self.start_movement(CarMovement.ACCELERATING)
@@ -356,16 +405,19 @@ class GrandmaDrivingAgent(CuboAgentVelocity):
     def setup(self):
         super().setup()
         self.jerk_delta = 50
+        self.update_rot_per_step()
         
 class WannabeRacerAgent(CuboAgentVelocity):
     def setup(self):
         super().setup()
         self.jerk_delta = 80
+        self.update_rot_per_step()
         
 class LawAbidingAgent(CuboAgentVelocity):
     def setup(self):
         super().setup()
         self.jerk_delta = 200
+        self.update_rot_per_step()
 
 class CuboModel(ap.Model):
 
@@ -406,6 +458,8 @@ class CuboModel(ap.Model):
             spawn = spawn_locations[i % len(spawn_locations)]
             agent.Position = list(spawn['pos'])
             agent.Direction = spawn['direction']
+            # TODO: Move this assigment to function inside Agent
+            agent.ideal_direction = agent.Direction
         
         
         for i, semaforo in enumerate(self.semaforos):
@@ -428,16 +482,16 @@ class CuboModel(ap.Model):
     def step(self):
         self.semaforos.step()
         self.cubos.step()
-        
-        global decorations
-        for decoration in decorations:
-            decoration.draw()
 
     def update(self):
         self.semaforos.update()
         self.cubos.update()
         self.record('Cantidad de colisiones', self.collisions)
         self.collisions = 0
+        
+        global decorations
+        for decoration in decorations:
+            decoration.draw()
 
     def end(self):
         pass
