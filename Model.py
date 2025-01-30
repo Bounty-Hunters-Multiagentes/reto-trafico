@@ -108,7 +108,7 @@ class CuboAgentVelocity(ap.Agent):
         else:
             self.g_cubo = Car.Car(self.Position,scale=5, id=self.id)
             
-        self.g_cubo.draw(self.Position, direction=self.Direction)
+       # self.g_cubo.draw(self.Position, direction=self.Direction)
     
     def step(self):
         if not self.is_active:
@@ -138,7 +138,8 @@ class CuboAgentVelocity(ap.Agent):
             self.Position[2] = new_pos[2]
 
     def update(self):
-        self.g_cubo.draw(self.Position, direction=self.Direction)
+        if self.is_active:
+            self.g_cubo.draw(self.Position, direction=self.Direction)
     
     def set_lane(self, lane):
         # print("Setting lane for agent", self.id, "to", lane.name)
@@ -350,7 +351,7 @@ class CuboAgentVelocity(ap.Agent):
         self.is_active = False
         # self.set_lane(self.model.nprandom.choice(list(lane_map.values())))
         # self.set_lane(self.lane)
-        self.Position = [1000, 1000, 1000] # sends to a position thats far away 
+        self.Position = [10000, 10000, 10000] # sends to a position thats far away 
 
         self.acc = 0
         self.vel = 0
@@ -451,6 +452,7 @@ class CuboModel(ap.Model):
         
         # Only add the car if there are no collisions
         if can_spawn:
+            # print("spawned a car")
             self.cubos.append(new_car)
         else:
             pass
@@ -470,6 +472,10 @@ class CuboModel(ap.Model):
         global decorations
         for decoration in decorations:
             decoration.draw()
+        
+            
+        if random.random() < 0.05:
+            self.spawn_new_car()
 
 
         global edificios
@@ -477,8 +483,6 @@ class CuboModel(ap.Model):
             edificio.draw()
 
     def update(self):
-        if self.t % 30 == 0:
-            self.spawn_new_car()
             # print("entered", len(self.cubos), self.t)
         self.semaforos.update()
         self.cubos.update()
