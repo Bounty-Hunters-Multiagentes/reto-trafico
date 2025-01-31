@@ -10,7 +10,7 @@ import Car
 import Cubo
 import PlanoCubos
 from Building import Building
-from constants import BUILDING_PATH, DEBUG
+from constants import BENCH_PATH, BUILDING_PATH, DEBUG, TREE_PATH
 from Decoration import Decoration
 from Lane import get_start_position, lane_map, lanes
 from Message import Message
@@ -498,12 +498,12 @@ class CuboModel(ap.Model):
         
         global decorations
         decorations = [
-            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(200,50,140), scale=0.05, rotation=[-90, 0, 0]),
-            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(140,50,200), scale=0.05, rotation=[-90, 0, 90]),
-            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(20,50, 200), scale=0.05, rotation=[-90, 0, -90]),
+            Decoration(BENCH_PATH, init_pos=(180,50,125), scale=0.05, rotation=[-90, 0, 0]),
+            Decoration(BENCH_PATH, init_pos=(125,50,180), scale=0.05, rotation=[-90, 0, 90]),
+            Decoration(BENCH_PATH, init_pos=(20,50,200), scale=0.05, rotation=[-90, 0, -90]),
 
-            Decoration("Assets/tree_2.obj", init_pos=(200,50,0), scale=0.1, rotation=[-90, 0, 0]),
-            Decoration("Assets/tree_2.obj", init_pos=(0,50,200), scale=0.1, rotation=[-90, 0, 0]),
+            Decoration(TREE_PATH, init_pos=(200,50,0), scale=0.1, rotation=[-90, 0, 0]),
+            Decoration(TREE_PATH, init_pos=(0,50,200), scale=0.1, rotation=[-90, 0, 0]),
         ]
         global edificios
         edificios = [

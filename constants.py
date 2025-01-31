@@ -9,6 +9,8 @@ CAR_PATH_CARTON_CAR = 'Assets/carton_car/material/carton_car.obj'
 BUILDING_PATH = 'Assets/building.jpg'
 FLOOR_PATH = 'Assets/4wayStreet.png'
 SKY_PATH = 'Assets/sky.jpeg'
+BENCH_PATH = "Assets/bench/Obj/Bench_LowRes.obj"
+TREE_PATH = "Assets/bench/Obj/Bench_LowRes.obj"
 
 ALL_CAR_PATHS = [
     # CAR_PATH_MUSTANG,
