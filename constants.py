@@ -29,4 +29,5 @@ DEBUG = {
     'move_decision': False,
     'cube': False,
     'lane': False,
+    'collision': True,
 }

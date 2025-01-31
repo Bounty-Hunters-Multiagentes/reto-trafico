@@ -2,19 +2,20 @@ import math
 from enum import Enum
 
 import agentpy as ap
+import matplotlib.pyplot as plt
 import numpy as np
 import pygame
-import matplotlib.pyplot as plt
 
 import Car
 import Cubo
 import PlanoCubos
-from constants import DEBUG
+from Building import Building
+from constants import BUILDING_PATH, DEBUG
 from Decoration import Decoration
 from Lane import get_start_position, lane_map, lanes
 from Message import Message
 from SemaforoAgent import SemaforoAgent
-from Building import Building
+
 
 class Direction(Enum):
     UP = 1
@@ -116,6 +117,11 @@ class CuboAgentVelocity(ap.Agent):
     def step(self):
         if not self.is_active:
             return
+        
+        # Handle collisions (this gets executed once per every pair of agents, as other agents are marked as inactive)
+        if self.collisionDetection():
+            self.is_active = False
+            self.model.collisions += 1
         
         self.speed_log.append(self.vel)
         if self.vel <= self.stop_treshold:
@@ -240,15 +246,23 @@ class CuboAgentVelocity(ap.Agent):
     '''
     Interaction, communication and perception
     '''
-    def CollitionDetection(self):
+    def collisionDetection(self):
+        collision = False
+        
         for ag in self.model.cubos:
             if self.id != ag.id:
                 d_x = self.Position[0] - ag.Position[0]
                 d_z = self.Position[2] - ag.Position[2]
                 d_c = math.sqrt(d_x * d_x + d_z * d_z)
+                
                 if d_c - (self.radio + ag.radio) < 0.0:
-                    self.collision = True
-                    self.model.collisions += 1                    
+                    ag.is_active = False
+                    collision = True
+                    
+                    if DEBUG["collision"]:
+                        print(f"Collision detected between car {self.id} and car {ag.id}")
+
+        return collision                  
         
     # Posible funcion para reemplazar objects_perceived
     def perceive_environment(self):
@@ -484,18 +498,17 @@ class CuboModel(ap.Model):
         
         global decorations
         decorations = [
-            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(200,50,140), scale=0.2, rotation=[-90, 0, 0]),
-            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(140,50,200), scale=0.2, rotation=[-90, 0, 90]),
-            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(20,50, 200), scale=0.2, rotation=[-90, 0, -90]),
+            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(200,50,140), scale=0.05, rotation=[-90, 0, 0]),
+            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(140,50,200), scale=0.05, rotation=[-90, 0, 90]),
+            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(20,50, 200), scale=0.05, rotation=[-90, 0, -90]),
 
-            Decoration("Assets/tree_2.obj", init_pos=(200,50,200), scale=0.1, rotation=[-90, 0, 0]),
             Decoration("Assets/tree_2.obj", init_pos=(200,50,0), scale=0.1, rotation=[-90, 0, 0]),
             Decoration("Assets/tree_2.obj", init_pos=(0,50,200), scale=0.1, rotation=[-90, 0, 0]),
         ]
         global edificios
         edificios = [
-            Building(init_pos=(-60, 50, -120), texture_file='Assets/Building.jpg'),
-            Building(init_pos=(150, 50, -120), texture_file='Assets/Building.jpg')
+            Building(init_pos=(-60, 50, -120), texture_file=BUILDING_PATH),
+            Building(init_pos=(150, 50, -120), texture_file=BUILDING_PATH)
         ]
         self.collisions = 0
 
@@ -547,6 +560,9 @@ class CuboModel(ap.Model):
             self.spawn_new_car()
 
     def update(self):
+        # Remove inactive cars (to free memory)
+        self.model.remove_inactive()
+        
         # print("entered", len(self.cubos), self.t)
         self.semaforos.update()
         self.cubos.update()
@@ -575,7 +591,12 @@ class CuboModel(ap.Model):
         # global edificios
         for edificio in edificios:
             edificio.draw()
-        
+            
+    def remove_inactive(self):
+        for agent in self.cubos:
+            if not agent.is_active:
+                self.cubos.remove(agent)
+
     def end(self):
         pass
 
@@ -634,7 +655,6 @@ while not done:
     
     if model.running:
         model.sim_step()
-    
 
     pygame.display.flip()
     pygame.time.wait(100)
