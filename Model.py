@@ -605,7 +605,7 @@ parameters = {
    'cubos' : 0,
    'dim' : 200,
    'vel' : 2.0,
-   'Scale' : 5.0,
+   'Scale' : 8.0,
    #'steps' : 100
 }
 
