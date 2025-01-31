@@ -10,6 +10,7 @@ import Car
 import Cubo
 import PlanoCubos
 from Building import Building
+from camera import Camera, load_camera
 from constants import BENCH_PATH, BUILDING_PATH, DEBUG, TREE_PATH
 from Decoration import Decoration
 from Lane import get_start_position, lane_map, lanes
@@ -616,6 +617,8 @@ STEP = 10
 done = False
 PlanoCubos.Init()
 model.sim_setup()
+camera = Camera()
+
 while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -624,31 +627,55 @@ while not done:
             model.create_output()
             model.output.info['Mensaje'] = 'Puedes añadir información al registro de esta forma.'
         elif event.type == pygame.KEYDOWN:
-            # Check for a specific key (e.g., SPACE key) to change velocity
-            if event.key == pygame.K_UP:  # UP key
-                for agent in model.cubos:
-                    agent.start_movement(CarMovement.ACCELERATING)
-                    
-            if event.key == pygame.K_DOWN:  # DOWN key
-                for agent in model.cubos:
-                    agent.start_movement(CarMovement.STOPPING)
-                    
-            if event.key == pygame.K_SPACE:  # SPACE key
-                for agent in model.cubos:
-                    agent.reset_position()
-                    
-            if event.key == pygame.K_a:
-                tar_ref.Position[0] -= STEP
-                
-            elif event.key == pygame.K_d:
-                tar_ref.Position[0] += STEP
-                
-            elif event.key == pygame.K_w:
-                tar_ref.Position[2] -= STEP
-                
-                
+            if event.key == pygame.K_w:
+                camera.move(dz=-10) 
             elif event.key == pygame.K_s:
-                tar_ref.Position[2] += STEP
+                camera.move(dz=10) 
+            elif event.key == pygame.K_a:
+                camera.move(dx=-10) 
+            elif event.key == pygame.K_d:
+                camera.move(dx=10) 
+            elif event.key == pygame.K_q:
+                camera.move(dy=-10) 
+            elif event.key == pygame.K_e:
+                camera.move(dy=10) 
+            elif event.key == pygame.K_LEFT:
+                camera.rotate(angle_y=-5) 
+            elif event.key == pygame.K_RIGHT:
+                camera.rotate(angle_y=5) 
+            elif event.key == pygame.K_UP:
+                camera.rotate(angle_x=-5) 
+            elif event.key == pygame.K_DOWN:
+                camera.rotate(angle_x=5)
+            elif event.key == pygame.K_r:
+                # reset cam
+                camera = Camera()
+                
+            load_camera(camera)
+            
+            # if event.key == pygame.K_UP:  # UP key
+            #     for agent in model.cubos:
+            #         agent.start_movement(CarMovement.ACCELERATING)
+            # if event.key == pygame.K_DOWN:  # DOWN key
+            #     for agent in model.cubos:
+            #         agent.start_movement(CarMovement.STOPPING)
+            # if event.key == pygame.K_SPACE:  # SPACE key
+            #     for agent in model.cubos:
+            #         agent.reset_position()
+            
+            # debug using cube movement  
+            # if event.key == pygame.K_a:
+            #     tar_ref.Position[0] -= STEP
+                
+            # elif event.key == pygame.K_d:
+            #     tar_ref.Position[0] += STEP
+                
+            # elif event.key == pygame.K_w:
+            #     tar_ref.Position[2] -= STEP
+                
+                
+            # elif event.key == pygame.K_s:
+            #     tar_ref.Position[2] += STEP
             
 
     PlanoCubos.display(parameters['dim'])

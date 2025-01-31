@@ -33,3 +33,7 @@ DEBUG = {
     'lane': False,
     'collision': True,
 }
+
+
+SCREEN_WIDTH = 500
+SCREEN_HEIGHT = 500
