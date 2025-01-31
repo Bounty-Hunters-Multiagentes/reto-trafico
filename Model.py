@@ -551,17 +551,7 @@ class CuboModel(ap.Model):
         self.semaforos.update()
         self.cubos.update()
         self.record('Cantidad de colisiones', self.collisions)
-        self.collisions = 0
         
-        # global decorations
-        for decoration in decorations:
-            decoration.draw()
-            
-        # global edificios
-        for edificio in edificios:
-            edificio.draw()
-
-    def end(self):
         # Calcular velocidad promedio
         total_speeds = [agent.speed_log for agent in self.cubos]
         flattened_speeds = [speed for sublist in total_speeds for speed in sublist]
@@ -577,10 +567,15 @@ class CuboModel(ap.Model):
         total_moving_time = sum(agent.moving_time for agent in self.cubos)
         avg_moving_time = total_moving_time / len(self.cubos) if self.cubos else 0
         self.report("Tiempo promedio avanzando (segundos)", avg_moving_time)
-    
-        # Cantidad de choques
-        self.record('Cantidad de colisiones', self.collisions)
-
+        
+        # global decorations
+        for decoration in decorations:
+            decoration.draw()
+            
+        # global edificios
+        for edificio in edificios:
+            edificio.draw()
+        
     def end(self):
         pass
 
@@ -665,4 +660,4 @@ plt.xticks(rotation=45, ha='right')
 plt.grid(axis='y', linestyle='--', alpha=0.7)
 
 plt.tight_layout()
-# plt.show()
+plt.show()
