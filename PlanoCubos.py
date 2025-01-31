@@ -1,17 +1,18 @@
+# Se carga el archivo de la clase Cubo
+import sys
+
 import pygame
-from pygame.locals import *
 
 # Cargamos las bibliotecas de OpenGL
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-from pygame import image
-from pygame.image import load
 from PIL import Image
+from pygame.locals import *
 
+from camera import Camera
 from constants import FLOOR_PATH, SKY_PATH
-# Se carga el archivo de la clase Cubo
-import sys
+
 sys.path.append('..')
 #from Cubo import Cubo
 
@@ -66,15 +67,15 @@ def Axis():
     glEnd()
     glLineWidth(1.0)
 
-def draw_skybox():
+def draw_skybox(camera: Camera):
     glPushMatrix()
     glDisable(GL_LIGHTING)
     glDisable(GL_DEPTH_TEST)
 
     # Get current camera position
-    x, y, z = EYE_X, EYE_Y, EYE_Z
+    x, y, z = camera.EYE_X, camera.EYE_Y, camera.EYE_Z
 
-    #Move the skybox to follow the camera
+    # Move the skybox to follow the camera
     glTranslatef(x, y, z)
     
     glBindTexture(GL_TEXTURE_2D, skybox_texture)
@@ -179,10 +180,10 @@ def Init():
     glEnable(GL_COLOR_MATERIAL)
     glShadeModel(GL_SMOOTH)           # most obj files expect to be smooth-shaded 
 
-def display(DimBoard):
+def display(DimBoard, camera: Camera):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
-    draw_skybox()  # Add this before drawing other objects
+    draw_skybox(camera)  # Add this before drawing other objects
     
     Axis()
 

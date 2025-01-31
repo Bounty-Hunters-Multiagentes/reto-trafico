@@ -1,4 +1,6 @@
 import math
+import os
+import pickle
 from dataclasses import dataclass, field
 
 import pygame
@@ -6,7 +8,12 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from constants import INVERT_CAMERA_ROTATION, SCREEN_HEIGHT, SCREEN_WIDTH
+from constants import (
+    CAMERA_POSES_DIR,
+    INVERT_CAMERA_ROTATION,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+)
 
 
 @dataclass
@@ -105,5 +112,23 @@ def modify_cam(keys, camera):
 
     if keys[pygame.K_r]:
         camera = Camera() # reset
+    if keys[pygame.K_r]:
+        camera = Camera() # reset
+    # Save new camera poses
+    # if keys[pygame.K_y]:
+    #     with open(os.path.join(CAMERA_POSES_DIR, f"pose_{len(os.listdir(CAMERA_POSES_DIR))}" ), 'wb') as f:
+    #         pickle.dump(camera, f)
         
     return camera
+
+pose_index = 0
+camera_paths = os.listdir(CAMERA_POSES_DIR)
+
+def set_camera_pose() -> Camera:
+    global pose_index, camera_paths
+    pose_index += 1
+    if pose_index >= len(camera_paths):
+        pose_index = 0
+    
+    with open(os.path.join(CAMERA_POSES_DIR, camera_paths[pose_index]), 'rb') as f:
+        return pickle.load(f)

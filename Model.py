@@ -1,4 +1,6 @@
 import math
+import os
+import pickle
 from enum import Enum
 
 import agentpy as ap
@@ -10,8 +12,8 @@ import Car
 import Cubo
 import PlanoCubos
 from Building import Building
-from camera import Camera, load_camera, modify_cam
-from constants import BENCH_PATH, BUILDING_PATH, DEBUG, TREE_PATH
+from camera import Camera, load_camera, modify_cam, set_camera_pose
+from constants import BENCH_PATH, BUILDING_PATH, CAMERA_POSES_DIR, DEBUG, TREE_PATH
 from Decoration import Decoration
 from Lane import get_start_position, lane_map, lanes
 from Message import Message
@@ -499,12 +501,13 @@ class CuboModel(ap.Model):
         
         global decorations
         decorations = [
-            Decoration(BENCH_PATH, init_pos=(180,1,125), scale=0.05, rotation=[-90, 0, 0]),
-            Decoration(BENCH_PATH, init_pos=(125,1,180), scale=0.05, rotation=[-90, 0, 90]),
-            Decoration(BENCH_PATH, init_pos=(20,1,200), scale=0.05, rotation=[-90, 0, -90]),
-
-            Decoration(TREE_PATH, init_pos=(200,1,0), scale=0.1, rotation=[-90, 0, 0]),
-            Decoration(TREE_PATH, init_pos=(0,1,200), scale=0.1, rotation=[-90, 0, 0]),
+            Decoration(BENCH_PATH, init_pos=(130,1,70), scale=0.05, rotation=[-90, 0, 0]),
+            Decoration(BENCH_PATH, init_pos=(70,1,130), scale=0.05, rotation=[-90, 0, 90]),
+            Decoration(BENCH_PATH, init_pos=(-70,1,130), scale=0.05, rotation=[-90, 0, -90]),
+            Decoration(BENCH_PATH, init_pos=(-74,1,-70), scale=0.05, rotation=[-90, 0, -125]),
+            
+            Decoration(TREE_PATH, init_pos=(180,1,-70), scale=0.1, rotation=[-90, 0, 0]),
+            Decoration(TREE_PATH, init_pos=(-70,1,180), scale=0.1, rotation=[-90, 0, 0]),
         ]
         global edificios
         edificios = [
@@ -627,7 +630,17 @@ while not done:
             model.create_output()
             model.output.info['Mensaje'] = 'Puedes añadir información al registro de esta forma.'
         elif event.type == pygame.KEYDOWN:
-            pass            
+            
+            if event.key == pygame.K_r:
+               camera = Camera()
+            if event.key == pygame.K_y:
+                with open(os.path.join(CAMERA_POSES_DIR, f"pose_{len(os.listdir(CAMERA_POSES_DIR))}" ), 'wb') as f:
+                    pickle.dump(camera, f)
+            if event.key == pygame.K_t:
+                camera = set_camera_pose()
+            
+            load_camera(camera)
+            
             # if event.key == pygame.K_UP:  # UP key
             #     for agent in model.cubos:
             #         agent.start_movement(CarMovement.ACCELERATING)
@@ -646,6 +659,7 @@ while not done:
             #     tar_ref.Position[2] -= STEP
             # elif event.key == pygame.K_s:
             #     tar_ref.Position[2] += STEP
+
     keys = pygame.key.get_pressed()
     
     next_cam = modify_cam(keys, camera)
@@ -653,9 +667,8 @@ while not done:
     if next_cam != camera:
         load_camera(camera)
         camera = next_cam
-            
 
-    PlanoCubos.display(parameters['dim'])
+    PlanoCubos.display(parameters['dim'], camera)
     
     if model.running:
         model.sim_step()
