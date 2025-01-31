@@ -10,7 +10,7 @@ import Car
 import Cubo
 import PlanoCubos
 from Building import Building
-from camera import Camera, load_camera
+from camera import Camera, load_camera, modify_cam
 from constants import BENCH_PATH, BUILDING_PATH, DEBUG, TREE_PATH
 from Decoration import Decoration
 from Lane import get_start_position, lane_map, lanes
@@ -499,12 +499,12 @@ class CuboModel(ap.Model):
         
         global decorations
         decorations = [
-            Decoration(BENCH_PATH, init_pos=(180,50,125), scale=0.05, rotation=[-90, 0, 0]),
-            Decoration(BENCH_PATH, init_pos=(125,50,180), scale=0.05, rotation=[-90, 0, 90]),
-            Decoration(BENCH_PATH, init_pos=(20,50,200), scale=0.05, rotation=[-90, 0, -90]),
+            Decoration(BENCH_PATH, init_pos=(180,1,125), scale=0.05, rotation=[-90, 0, 0]),
+            Decoration(BENCH_PATH, init_pos=(125,1,180), scale=0.05, rotation=[-90, 0, 90]),
+            Decoration(BENCH_PATH, init_pos=(20,1,200), scale=0.05, rotation=[-90, 0, -90]),
 
-            Decoration(TREE_PATH, init_pos=(200,50,0), scale=0.1, rotation=[-90, 0, 0]),
-            Decoration(TREE_PATH, init_pos=(0,50,200), scale=0.1, rotation=[-90, 0, 0]),
+            Decoration(TREE_PATH, init_pos=(200,1,0), scale=0.1, rotation=[-90, 0, 0]),
+            Decoration(TREE_PATH, init_pos=(0,1,200), scale=0.1, rotation=[-90, 0, 0]),
         ]
         global edificios
         edificios = [
@@ -627,32 +627,7 @@ while not done:
             model.create_output()
             model.output.info['Mensaje'] = 'Puedes añadir información al registro de esta forma.'
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w:
-                camera.move(dz=-10) 
-            elif event.key == pygame.K_s:
-                camera.move(dz=10) 
-            elif event.key == pygame.K_a:
-                camera.move(dx=-10) 
-            elif event.key == pygame.K_d:
-                camera.move(dx=10) 
-            elif event.key == pygame.K_q:
-                camera.move(dy=-10) 
-            elif event.key == pygame.K_e:
-                camera.move(dy=10) 
-            elif event.key == pygame.K_LEFT:
-                camera.rotate(angle_y=-5) 
-            elif event.key == pygame.K_RIGHT:
-                camera.rotate(angle_y=5) 
-            elif event.key == pygame.K_UP:
-                camera.rotate(angle_x=-5) 
-            elif event.key == pygame.K_DOWN:
-                camera.rotate(angle_x=5)
-            elif event.key == pygame.K_r:
-                # reset cam
-                camera = Camera()
-                
-            load_camera(camera)
-            
+            pass            
             # if event.key == pygame.K_UP:  # UP key
             #     for agent in model.cubos:
             #         agent.start_movement(CarMovement.ACCELERATING)
@@ -662,20 +637,22 @@ while not done:
             # if event.key == pygame.K_SPACE:  # SPACE key
             #     for agent in model.cubos:
             #         agent.reset_position()
-            
             # debug using cube movement  
             # if event.key == pygame.K_a:
             #     tar_ref.Position[0] -= STEP
-                
             # elif event.key == pygame.K_d:
             #     tar_ref.Position[0] += STEP
-                
             # elif event.key == pygame.K_w:
             #     tar_ref.Position[2] -= STEP
-                
-                
             # elif event.key == pygame.K_s:
             #     tar_ref.Position[2] += STEP
+    keys = pygame.key.get_pressed()
+    
+    next_cam = modify_cam(keys, camera)
+    
+    if next_cam != camera:
+        load_camera(camera)
+        camera = next_cam
             
 
     PlanoCubos.display(parameters['dim'])

@@ -1,11 +1,12 @@
 import math
 from dataclasses import dataclass, field
 
+import pygame
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from constants import INVERT_CAMERA_ROTATION, SCREEN_HEIGHT, SCREEN_WIDTH
 
 
 @dataclass
@@ -24,10 +25,14 @@ class Camera:
     UP_Y: float = field(default=1)
     UP_Z: float = field(default=0)
     
-    yaw: float = field(default=0.0)
-    pitch: float = field(default=0.0)
+    yaw: float = field(default=45.0)
+    pitch: float = field(default=200.0)
+    
     
     def rotate(self, angle_x=0, angle_y=0):
+        
+        angle_x *= INVERT_CAMERA_ROTATION
+        angle_y *= INVERT_CAMERA_ROTATION
         self.yaw += angle_y
         self.pitch += angle_x
         
@@ -38,13 +43,19 @@ class Camera:
         self.CENTER_Y = self.EYE_Y + math.sin(rad_pitch)
         self.CENTER_Z = self.EYE_Z + math.cos(rad_pitch) * math.cos(rad_yaw)
         
-    def move(self, dx=0, dy=0, dz=0):
-        self.EYE_X += dx
-        self.EYE_Y += dy
-        self.EYE_Z += dz
-        self.CENTER_X += dx
-        self.CENTER_Y += dy
-        self.CENTER_Z += dz
+    def move(self, forward=0, right=0, up=0):
+        rad_yaw = math.radians(self.yaw)
+        forward_x = math.sin(rad_yaw) * forward
+        forward_z = math.cos(rad_yaw) * forward
+        right_x = math.cos(rad_yaw) * right
+        right_z = -math.sin(rad_yaw) * right
+        
+        self.EYE_X += forward_x + right_x
+        self.EYE_Y += up
+        self.EYE_Z += forward_z + right_z
+        self.CENTER_X += forward_x + right_x
+        self.CENTER_Y += up
+        self.CENTER_Z += forward_z + right_z
 
 def load_camera(camera: Camera):
     glMatrixMode(GL_PROJECTION)
@@ -64,3 +75,35 @@ def load_camera(camera: Camera):
         camera.UP_Y,
         camera.UP_Z,
     )
+    
+def modify_cam(keys, camera):
+    camera = Camera(**vars(camera)) # Make a copy to avoid modifying the original camera
+    
+    if keys[pygame.K_w]:
+        camera.move(forward=-10)  # Move forward relative to camera
+    if keys[pygame.K_s]:
+        camera.move(forward=10)
+        # camera.move(forward=-10)  # Move backward relative to camera
+    if keys[pygame.K_a]:
+        camera.move(right=-10)  # Move left relative to camera
+    if keys[pygame.K_d]:
+        camera.move(right=10)  # Move right relative to camera
+        
+    if keys[pygame.K_q]:
+        camera.move(up=-10)  # Move down
+    if keys[pygame.K_e]:
+        camera.move(up=10)  # Move up
+        
+    if keys[pygame.K_LEFT]:
+        camera.rotate(angle_y=-5)  # Rotate left
+    if keys[pygame.K_RIGHT]:
+        camera.rotate(angle_y=5)  # Rotate right
+    if keys[pygame.K_UP]:
+        camera.rotate(angle_x=5)  # Look up
+    if keys[pygame.K_DOWN]:
+        camera.rotate(angle_x=-5)  # Look down
+
+    if keys[pygame.K_r]:
+        camera = Camera() # reset
+        
+    return camera
