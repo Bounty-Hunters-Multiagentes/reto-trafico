@@ -9,6 +9,8 @@ CAR_PATH_CARTON_CAR = 'Assets/carton_car/material/carton_car.obj'
 BUILDING_PATH = 'Assets/building.jpg'
 FLOOR_PATH = 'Assets/4wayStreet.png'
 SKY_PATH = 'Assets/sky.jpeg'
+BENCH_PATH = 'Assets/bench/Obj/Bench_LowRes.obj'
+TREE_PATH = 'Assets/tree_2.obj'
 
 ALL_CAR_PATHS = [
     # CAR_PATH_MUSTANG,
@@ -29,4 +31,12 @@ DEBUG = {
     'move_decision': False,
     'cube': False,
     'lane': False,
+    'collision': True,
 }
+
+INVERT_CAMERA_ROTATION = -1
+
+SCREEN_WIDTH = 500
+SCREEN_HEIGHT = 500
+
+CAMERA_POSES_DIR = 'Assets/camera_poses/'

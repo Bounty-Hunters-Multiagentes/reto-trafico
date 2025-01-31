@@ -1,20 +1,24 @@
 import math
+import os
+import pickle
 from enum import Enum
 
 import agentpy as ap
+import matplotlib.pyplot as plt
 import numpy as np
 import pygame
-import matplotlib.pyplot as plt
 
 import Car
 import Cubo
 import PlanoCubos
-from constants import DEBUG
+from Building import Building
+from camera import Camera, load_camera, modify_cam, set_camera_pose
+from constants import BENCH_PATH, BUILDING_PATH, CAMERA_POSES_DIR, DEBUG, TREE_PATH
 from Decoration import Decoration
 from Lane import get_start_position, lane_map, lanes
 from Message import Message
 from SemaforoAgent import SemaforoAgent
-from Building import Building
+
 
 class Direction(Enum):
     UP = 1
@@ -116,6 +120,11 @@ class CuboAgentVelocity(ap.Agent):
     def step(self):
         if not self.is_active:
             return
+        
+        # Handle collisions (this gets executed once per every pair of agents, as other agents are marked as inactive)
+        if self.collisionDetection():
+            self.is_active = False
+            self.model.collisions += 1
         
         self.speed_log.append(self.vel)
         if self.vel <= self.stop_treshold:
@@ -240,15 +249,23 @@ class CuboAgentVelocity(ap.Agent):
     '''
     Interaction, communication and perception
     '''
-    def CollitionDetection(self):
+    def collisionDetection(self):
+        collision = False
+        
         for ag in self.model.cubos:
             if self.id != ag.id:
                 d_x = self.Position[0] - ag.Position[0]
                 d_z = self.Position[2] - ag.Position[2]
                 d_c = math.sqrt(d_x * d_x + d_z * d_z)
+                
                 if d_c - (self.radio + ag.radio) < 0.0:
-                    self.collision = True
-                    self.model.collisions += 1                    
+                    ag.is_active = False
+                    collision = True
+                    
+                    if DEBUG["collision"]:
+                        print(f"Collision detected between car {self.id} and car {ag.id}")
+
+        return collision                  
         
     # Posible funcion para reemplazar objects_perceived
     def perceive_environment(self):
@@ -484,18 +501,18 @@ class CuboModel(ap.Model):
         
         global decorations
         decorations = [
-            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(200,50,140), scale=0.2, rotation=[-90, 0, 0]),
-            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(140,50,200), scale=0.2, rotation=[-90, 0, 90]),
-            Decoration("Assets/bench/Obj/Bench_LowRes.obj", init_pos=(20,50, 200), scale=0.2, rotation=[-90, 0, -90]),
-
-            Decoration("Assets/tree_2.obj", init_pos=(200,50,200), scale=0.1, rotation=[-90, 0, 0]),
-            Decoration("Assets/tree_2.obj", init_pos=(200,50,0), scale=0.1, rotation=[-90, 0, 0]),
-            Decoration("Assets/tree_2.obj", init_pos=(0,50,200), scale=0.1, rotation=[-90, 0, 0]),
+            Decoration(BENCH_PATH, init_pos=(130,1,70), scale=0.05, rotation=[-90, 0, 0]),
+            Decoration(BENCH_PATH, init_pos=(70,1,130), scale=0.05, rotation=[-90, 0, 90]),
+            Decoration(BENCH_PATH, init_pos=(-70,1,130), scale=0.05, rotation=[-90, 0, -90]),
+            Decoration(BENCH_PATH, init_pos=(-74,1,-70), scale=0.05, rotation=[-90, 0, -125]),
+            
+            Decoration(TREE_PATH, init_pos=(180,1,-70), scale=0.1, rotation=[-90, 0, 0]),
+            Decoration(TREE_PATH, init_pos=(-70,1,180), scale=0.1, rotation=[-90, 0, 0]),
         ]
         global edificios
         edificios = [
-            Building(init_pos=(-60, 50, -120), texture_file='Assets/Building.jpg'),
-            Building(init_pos=(150, 50, -120), texture_file='Assets/Building.jpg')
+            Building(init_pos=(-60, 50, -120), texture_file=BUILDING_PATH),
+            Building(init_pos=(150, 50, -120), texture_file=BUILDING_PATH)
         ]
         self.collisions = 0
 
@@ -547,6 +564,9 @@ class CuboModel(ap.Model):
             self.spawn_new_car()
 
     def update(self):
+        # Remove inactive cars (to free memory)
+        self.model.remove_inactive()
+        
         # print("entered", len(self.cubos), self.t)
         self.semaforos.update()
         self.cubos.update()
@@ -575,7 +595,12 @@ class CuboModel(ap.Model):
         # global edificios
         for edificio in edificios:
             edificio.draw()
-        
+            
+    def remove_inactive(self):
+        for agent in self.cubos:
+            if not agent.is_active:
+                self.cubos.remove(agent)
+
     def end(self):
         pass
 
@@ -584,7 +609,7 @@ parameters = {
    'cubos' : 0,
    'dim' : 200,
    'vel' : 2.0,
-   'Scale' : 5.0,
+   'Scale' : 8.0,
    #'steps' : 100
 }
 
@@ -595,6 +620,8 @@ STEP = 10
 done = False
 PlanoCubos.Init()
 model.sim_setup()
+camera = Camera()
+
 while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -603,38 +630,48 @@ while not done:
             model.create_output()
             model.output.info['Mensaje'] = 'Puedes añadir información al registro de esta forma.'
         elif event.type == pygame.KEYDOWN:
-            # Check for a specific key (e.g., SPACE key) to change velocity
-            if event.key == pygame.K_UP:  # UP key
-                for agent in model.cubos:
-                    agent.start_movement(CarMovement.ACCELERATING)
-                    
-            if event.key == pygame.K_DOWN:  # DOWN key
-                for agent in model.cubos:
-                    agent.start_movement(CarMovement.STOPPING)
-                    
-            if event.key == pygame.K_SPACE:  # SPACE key
-                for agent in model.cubos:
-                    agent.reset_position()
-                    
-            if event.key == pygame.K_a:
-                tar_ref.Position[0] -= STEP
-                
-            elif event.key == pygame.K_d:
-                tar_ref.Position[0] += STEP
-                
-            elif event.key == pygame.K_w:
-                tar_ref.Position[2] -= STEP
-                
-                
-            elif event.key == pygame.K_s:
-                tar_ref.Position[2] += STEP
             
+            if event.key == pygame.K_r:
+               camera = Camera()
+            if event.key == pygame.K_y:
+                with open(os.path.join(CAMERA_POSES_DIR, f"pose_{len(os.listdir(CAMERA_POSES_DIR))}" ), 'wb') as f:
+                    pickle.dump(camera, f)
+            if event.key == pygame.K_t:
+                camera = set_camera_pose()
+            
+            load_camera(camera)
+            
+            # if event.key == pygame.K_UP:  # UP key
+            #     for agent in model.cubos:
+            #         agent.start_movement(CarMovement.ACCELERATING)
+            # if event.key == pygame.K_DOWN:  # DOWN key
+            #     for agent in model.cubos:
+            #         agent.start_movement(CarMovement.STOPPING)
+            # if event.key == pygame.K_SPACE:  # SPACE key
+            #     for agent in model.cubos:
+            #         agent.reset_position()
+            # debug using cube movement  
+            # if event.key == pygame.K_a:
+            #     tar_ref.Position[0] -= STEP
+            # elif event.key == pygame.K_d:
+            #     tar_ref.Position[0] += STEP
+            # elif event.key == pygame.K_w:
+            #     tar_ref.Position[2] -= STEP
+            # elif event.key == pygame.K_s:
+            #     tar_ref.Position[2] += STEP
 
-    PlanoCubos.display(parameters['dim'])
+    keys = pygame.key.get_pressed()
+    
+    next_cam = modify_cam(keys, camera)
+    
+    if next_cam != camera:
+        load_camera(camera)
+        camera = next_cam
+
+    PlanoCubos.display(parameters['dim'], camera)
     
     if model.running:
         model.sim_step()
-    
 
     pygame.display.flip()
     pygame.time.wait(100)
