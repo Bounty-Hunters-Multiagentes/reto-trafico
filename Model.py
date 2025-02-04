@@ -18,7 +18,7 @@ from Decoration import Decoration
 from Lane import get_start_position, lane_map, lanes
 from Message import Message
 from SemaforoAgent import SemaforoAgent
-
+from SemaforoAgentDumb import SemaforoAgentDumb
 
 class Direction(Enum):
     UP = 1
