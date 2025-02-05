@@ -16,8 +16,8 @@ from constants import FLOOR_PATH, SKY_PATH
 sys.path.append('..')
 #from Cubo import Cubo
 
-screen_width = 500
-screen_height = 500
+screen_width = 800
+screen_height = 800
 #vc para el obser.
 FOVY=60.0
 ZNEAR=0.01

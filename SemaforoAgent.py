@@ -162,6 +162,7 @@ class SemaforoAgent(ap.Agent):
             pass
             print(f"Traffic light {self.direction} is RED.")
         """
+    
     def step(self):
         """
         Main step function: see, decide the next state, and perform the action.
