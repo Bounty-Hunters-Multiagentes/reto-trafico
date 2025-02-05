@@ -7,6 +7,8 @@ import agentpy as ap
 import matplotlib.pyplot as plt
 import numpy as np
 import pygame
+import seaborn as sns
+import pandas as pd
 
 import Car
 import Cubo
@@ -48,6 +50,7 @@ class CuboAgentVelocity(ap.Agent):
     def setup(self):
         
         self.is_active = True
+        self.type = "CuboAgentVelocity"
         
         self.vel = 0
         self.acc = 0
@@ -124,6 +127,7 @@ class CuboAgentVelocity(ap.Agent):
         # Handle collisions (this gets executed once per every pair of agents, as other agents are marked as inactive)
         if self.collisionDetection():
             self.is_active = False
+            self.model.utilities_log.append((self.type, 0)) # 0 utility for you because crash
             self.model.collisions += 1
         
         self.speed_log.append(self.vel)
@@ -261,6 +265,7 @@ class CuboAgentVelocity(ap.Agent):
                 if d_c - (self.radio + ag.radio) < 0.0:
                     ag.is_active = False
                     collision = True
+                    self.model.utilities_log.append((ag.type, 0)) # 0 utility for you because crash
                     
                     if DEBUG["collision"]:
                         print(f"Collision detected between car {self.id} and car {ag.id}")
@@ -429,6 +434,9 @@ class CuboAgentVelocity(ap.Agent):
          
     def reset_position(self):
         self.is_active = False
+        if len(self.speed_log) > 0:
+            avg_speed = sum(self.speed_log) / len(self.speed_log)
+            self.model.utilities_log.append((self.type, avg_speed)) # 0 utility for you because crash
         # self.set_lane(self.model.nprandom.choice(list(lane_map.values())))
         # self.set_lane(self.lane)
         self.Position = [10000, 10000, 10000] # sends to a position thats far away 
@@ -446,22 +454,26 @@ class GrandmaDrivingAgent(CuboAgentVelocity):
         super().setup()
         self.jerk_delta = 50
         self.update_rot_per_step()
-        
+        self.type = "GrandmaDrivingAgent"
+                
 class WannabeRacerAgent(CuboAgentVelocity):
-    def setup(self):
-        super().setup()
-        self.jerk_delta = 80
-        self.update_rot_per_step()
-        
-class LawAbidingAgent(CuboAgentVelocity):
     def setup(self):
         super().setup()
         self.jerk_delta = 200
         self.update_rot_per_step()
+        self.type = "WannabeRacerAgent"
+        
+class LawAbidingAgent(CuboAgentVelocity):
+    def setup(self):
+        super().setup()
+        self.jerk_delta = 80
+        self.update_rot_per_step()
+        self.type = "LawAbidingAgent"
 
 class CuboModel(ap.Model):
 
     def setup(self):
+        self.utilities_log = [] # Tuple of (type, utility)
         self.cartype1 = ap.AgentList(self, 1, CuboAgentVelocity)
         self.cartype2 = ap.AgentList(self, 1, GrandmaDrivingAgent)
         self.cartype3 = ap.AgentList(self, 1, WannabeRacerAgent)
@@ -602,6 +614,7 @@ class CuboModel(ap.Model):
                 self.cubos.remove(agent)
 
     def end(self):
+        self.report('all_utilities', self.utilities_log)
         pass
 
 
@@ -627,6 +640,7 @@ while not done:
         if event.type == pygame.QUIT:
             done = True
             model.stop()
+            model.end()
             model.create_output()
             model.output.info['Mensaje'] = 'Puedes añadir información al registro de esta forma.'
         elif event.type == pygame.KEYDOWN:
@@ -678,7 +692,7 @@ while not done:
 
 pygame.quit()
 
-reporters = {key: value for key, value in model.reporters.items() if key != "seed"}
+reporters = {key: value for key, value in model.reporters.items() if key not in ['seed', 'all_utilities']}
 model.output.variables.CuboModel.plot()
 
 plt.figure(figsize=(9, 8))
@@ -694,5 +708,41 @@ plt.ylabel("Valores")
 plt.xticks(rotation=45, ha='right') 
 plt.grid(axis='y', linestyle='--', alpha=0.7)
 
+# Create the stacked histogram
+agent_type = [item[0] for item in model.reporters['all_utilities']]
+utilities = [item[1] for item in model.reporters['all_utilities']]
+data = pd.DataFrame({
+    'utility (avg_velocity)': utilities,
+    'agent_type': agent_type
+})
+
+plt.figure(figsize=(12, 6))
+
+# Define color palette as a dictionary to ensure consistent mapping
+colors = ['red', 'blue', 'green', 'orange']
+unique_agents = sorted(data['agent_type'].unique())  # Get unique agent types
+color_dict = dict(zip(unique_agents, colors[:len(unique_agents)]))
+
+# Create the histogram with the color mapping
+ax = sns.histplot(
+    data=data,
+    x='utility (avg_velocity)',
+    hue='agent_type',
+    multiple="stack",
+    palette=color_dict,  # Use the color dictionary
+    bins=30,
+    stat="count",
+    common_norm=False
+)
+
+plt.title('Distribution of Utility Values by Agent Type')
+plt.xlabel('Utility')
+plt.ylabel('Count')
+
+# Create legend handles with the correct color mapping
+handles = [plt.Rectangle((0,0),1,1, color=color_dict[agent]) for agent in unique_agents]
+plt.legend(handles, unique_agents, title='Agent Type')
+
+# Adjust layout
 plt.tight_layout()
 plt.show()
