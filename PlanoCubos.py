@@ -184,8 +184,6 @@ def display(DimBoard, camera: Camera):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
     draw_skybox(camera)  # Add this before drawing other objects
-    
-    Axis()
 
     # Draw the floor
     glEnable(GL_TEXTURE_2D)
