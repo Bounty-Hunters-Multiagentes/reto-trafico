@@ -2,6 +2,7 @@ from Message import Message
 import agentpy as ap
 import math
 from Semaforo import Semaforo
+from constants import DEBUG
 
 class SemaforoAgent(ap.Agent):
 
@@ -65,8 +66,9 @@ class SemaforoAgent(ap.Agent):
             arrival_times = [(time, dir) for dir, time in self.first_car_arrivals.items()]
             arrival_times.sort()  # Sort by earliest arrival time
 
-            print("these were the arrival times: ", self.direction, self.first_car_arrival)
-            print(arrival_times)
+            if DEBUG['traffic_lights']:
+                print("these were the arrival times: ", self.direction, self.first_car_arrival)
+                print(arrival_times)
 
             if (arrival_times[0][0], self.direction) == arrival_times[0]:
                 self.intention = "Green"
@@ -120,9 +122,8 @@ class SemaforoAgent(ap.Agent):
         """
         if self.intention:
             if self.state == "Yellow" and self.intention == "Red":
-                print()
-                print()
-                print("Became Red", self.direction, self.model.t)
+                if DEBUG['traffic_lights']:
+                    print("Became Red", self.direction, self.model.t)
                 # Notify other traffic lights when switching to Red
                 for other_light in self.model.semaforos:
                     if other_light.direction != self.direction or True: # lo vamos a dejar asi por ahora (deberia funcionar igual)

@@ -31,7 +31,8 @@ DEBUG = {
     'move_decision': False,
     'cube': False,
     'lane': False,
-    'collision': True,
+    'collision': False,
+    'traffic_lights': False
 }
 
 INVERT_CAMERA_ROTATION = -1

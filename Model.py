@@ -678,9 +678,7 @@ while not done:
 
 pygame.quit()
 
-print(model.output.info)
 reporters = {key: value for key, value in model.reporters.items() if key != "seed"}
-
 model.output.variables.CuboModel.plot()
 
 plt.figure(figsize=(9, 8))
