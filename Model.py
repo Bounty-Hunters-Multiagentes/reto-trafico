@@ -693,7 +693,9 @@ while not done:
 pygame.quit()
 
 reporters = {key: value for key, value in model.reporters.items() if key not in ['seed', 'all_utilities']}
-model.output.variables.CuboModel.plot()
+# plt.figure(figsize=(9, 8))
+# model.output.variables.CuboModel.plot()
+# plt.title("Carros por carril y choques")
 
 plt.figure(figsize=(9, 8))
 plt.title("Metricas reportadas")
@@ -712,7 +714,7 @@ plt.grid(axis='y', linestyle='--', alpha=0.7)
 agent_type = [item[0] for item in model.reporters['all_utilities']]
 utilities = [item[1] for item in model.reporters['all_utilities']]
 data = pd.DataFrame({
-    'utility (avg_velocity)': utilities,
+    'utility': utilities,
     'agent_type': agent_type
 })
 
@@ -726,7 +728,7 @@ color_dict = dict(zip(unique_agents, colors[:len(unique_agents)]))
 # Create the histogram with the color mapping
 ax = sns.histplot(
     data=data,
-    x='utility (avg_velocity)',
+    x='utility',
     hue='agent_type',
     multiple="stack",
     palette=color_dict,  # Use the color dictionary
@@ -735,13 +737,13 @@ ax = sns.histplot(
     common_norm=False
 )
 
-plt.title('Distribution of Utility Values by Agent Type')
-plt.xlabel('Utility')
-plt.ylabel('Count')
+plt.title('Distribución de Utilidad por Tipo de Agente')
+plt.xlabel('Utilidad (velocidad promedio)')
+plt.ylabel('Cantidad')
 
 # Create legend handles with the correct color mapping
 handles = [plt.Rectangle((0,0),1,1, color=color_dict[agent]) for agent in unique_agents]
-plt.legend(handles, unique_agents, title='Agent Type')
+plt.legend(handles, unique_agents, title='Tipo de Agente')
 
 # Adjust layout
 plt.tight_layout()
