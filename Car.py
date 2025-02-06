@@ -1,17 +1,12 @@
 import math
 
-import numpy as np
-
 # Cargamos las bibliotecas de OpenGL
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from pygame.locals import *
 
-from constants import (
-    ALL_CAR_PATHS,
-    DRAW_CAR_LIGHT
-)
+from constants import CAR_PATH_ORANGE_CAR, DRAW_CAR_LIGHT  # , ALL_CAR_PATHS
 from objloader import OBJ
 
 
@@ -22,8 +17,15 @@ def get_rotation_from_direction(direction):
 
 
 class Car:
-    def __init__(self, init_pos=(0, 0, 0), scale=1, id=-1):
-        car_path = np.random.choice(ALL_CAR_PATHS)
+    def __init__(self, init_pos=(0, 0, 0), car_skin=None, scale=1, id=-1):
+        
+        if car_skin is not None:
+            car_path = car_skin
+            print("selecting car path")
+        else:
+            car_path = CAR_PATH_ORANGE_CAR
+            # car_path = np.random.choice(ALL_CAR_PATHS)
+        
         self.mustang = OBJ(car_path, swapyz=True)
         self.mustang.generate()
         self.Position = list(init_pos)

@@ -6,21 +6,30 @@ from enum import Enum
 import agentpy as ap
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import pygame
 import seaborn as sns
-import pandas as pd
 
 import Car
 import Cubo
 import PlanoCubos
 from Building import Building
 from camera import Camera, load_camera, modify_cam, set_camera_pose
-from constants import BENCH_PATH, BUILDING_PATH, CAMERA_POSES_DIR, DEBUG, TREE_PATH
+from constants import (
+    BENCH_PATH,
+    BUILDING_PATH,
+    CAMERA_POSES_DIR,
+    CAR_PATH_POLICE_CAR,
+    CAR_PATH_RIXA_TAXI,
+    CAR_PATH_SINTO_CAR,
+    DEBUG,
+    TREE_PATH,
+)
 from Decoration import Decoration
 from Lane import get_start_position, lane_map, lanes
 from Message import Message
 from SemaforoAgent import SemaforoAgent
-from SemaforoAgentDumb import SemaforoAgentDumb
+
 
 class Direction(Enum):
     UP = 1
@@ -104,13 +113,17 @@ class CuboAgentVelocity(ap.Agent):
         self.in_rotation = False
         self.want_to_turn = np.random.choice([True, False])
         self.pending_deg_to_rotate = 0
+        
+        car_skin = None
+        if hasattr(self, 'car_skin'):
+            car_skin = self.car_skin
 
         if self.id == 1 and DEBUG['cube']:
             global tar_ref
             self.g_cubo = Cubo.Cubo(self.Position, scale=5)
             tar_ref = self
         else:
-            self.g_cubo = Car.Car(self.Position,scale=5, id=self.id)
+            self.g_cubo = Car.Car(self.Position,car_skin, scale=5, id=self.id)
             
         # Metrics
         self.speed_log = []
@@ -451,6 +464,8 @@ class CuboAgentVelocity(ap.Agent):
         
 class GrandmaDrivingAgent(CuboAgentVelocity):
     def setup(self):
+        self.car_skin = CAR_PATH_RIXA_TAXI
+
         super().setup()
         self.jerk_delta = 50
         self.update_rot_per_step()
@@ -458,6 +473,8 @@ class GrandmaDrivingAgent(CuboAgentVelocity):
                 
 class WannabeRacerAgent(CuboAgentVelocity):
     def setup(self):
+        self.car_skin = CAR_PATH_SINTO_CAR
+
         super().setup()
         self.jerk_delta = 200
         self.update_rot_per_step()
@@ -465,6 +482,7 @@ class WannabeRacerAgent(CuboAgentVelocity):
         
 class LawAbidingAgent(CuboAgentVelocity):
     def setup(self):
+        self.car_skin = CAR_PATH_POLICE_CAR
         super().setup()
         self.jerk_delta = 80
         self.update_rot_per_step()
