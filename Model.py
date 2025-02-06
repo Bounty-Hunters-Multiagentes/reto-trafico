@@ -590,7 +590,7 @@ class CuboModel(ap.Model):
         for lane_name, count in vehicles_per_lane.items():
             self.record(f"Carros en carril {lane_name}", count)
         
-        if np.random.random() < 0.10:
+        if np.random.random() < 0.16:
             self.spawn_new_car()
 
     def update(self):
