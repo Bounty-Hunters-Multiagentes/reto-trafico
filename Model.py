@@ -618,6 +618,9 @@ class CuboModel(ap.Model):
         avg_moving_time = total_moving_time / len(self.cubos) if self.cubos else 0
         self.report("Tiempo promedio avanzando (segundos)", avg_moving_time)
         
+        # Reportar Colisiones
+        self.report("Colisiones entre 10", self.model.collisions / 10)
+        
         # global decorations
         for decoration in decorations:
             decoration.draw()
