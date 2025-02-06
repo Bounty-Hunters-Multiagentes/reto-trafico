@@ -21,7 +21,6 @@ class Car:
         
         if car_skin is not None:
             car_path = car_skin
-            print("selecting car path")
         else:
             car_path = CAR_PATH_ORANGE_CAR
             # car_path = np.random.choice(ALL_CAR_PATHS)
